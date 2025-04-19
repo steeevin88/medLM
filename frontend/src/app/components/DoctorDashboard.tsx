@@ -37,7 +37,7 @@ export default function DoctorDashboard() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
       {/* Patient List */}
-      <div className="bg-white rounded-lg shadow-md p-4 md:col-span-1">
+      <div className="bg-white rounded-lg shadow-md p-4 md:col-span-1 flex flex-col h-[calc(100vh-12rem)]">
         <div className="mb-4">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Anonymous Patients</h2>
           <div className="relative">
@@ -63,14 +63,14 @@ export default function DoctorDashboard() {
           </div>
         </div>
 
-        <div className="space-y-3 max-h-[500px] overflow-y-auto">
+        <div className="overflow-y-auto flex-1 space-y-3 pr-1">
           {filteredPatients.length === 0 ? (
             <p className="text-gray-500 text-center py-4">No patients match your search.</p>
           ) : (
             filteredPatients.map(patient => (
               <div
                 key={patient.id}
-                className={`p-3 rounded-md cursor-pointer transition-colors ${
+                className={`p-4 rounded-md cursor-pointer transition-colors ${
                   selectedPatient === patient.id
                     ? 'bg-blue-50 border border-blue-200'
                     : 'hover:bg-gray-50 border border-gray-100'
@@ -79,22 +79,22 @@ export default function DoctorDashboard() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium text-gray-800">ID: {patient.anonymizedId}</h3>
-                    <p className="text-sm text-gray-500">
-                      {patient.age} years • <span className="bg-gray-900 text-gray-900 px-1 rounded select-none cursor-not-allowed">data protected</span>
+                    <h3 className="font-medium text-gray-800 mb-1">ID: {patient.anonymizedId}</h3>
+                    <p className="text-sm text-gray-500 mb-3">
+                      {patient.age} years • <span className="bg-gray-100 text-gray-800 px-1 rounded select-none cursor-not-allowed">data protected</span>
                     </p>
                   </div>
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  <span className="text-xs bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full font-medium">
                     {patient.pendingTests.length} pending tests
                   </span>
                 </div>
-                <div className="mt-2">
-                  <h4 className="text-xs text-gray-500 uppercase">Recent Symptoms:</h4>
-                  <div className="flex flex-wrap gap-1 mt-1">
+                <div>
+                  <h4 className="text-xs text-gray-500 uppercase font-medium mb-1.5">Recent Symptoms:</h4>
+                  <div className="flex flex-wrap gap-1.5">
                     {patient.recentSymptoms.map((symptom, idx) => (
                       <span
                         key={idx}
-                        className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full"
+                        className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full"
                       >
                         {symptom}
                       </span>
@@ -136,15 +136,17 @@ export default function DoctorDashboard() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-800">
+                  <h2 className="text-2xl font-semibold text-gray-800 mb-2">
                     Patient {currentPatient?.anonymizedId}
                   </h2>
-                  <div className="flex gap-4 mt-2">
-                    <span className="text-gray-600">
-                      Age: <span className="font-medium">{currentPatient?.age}</span>
-                    </span>
-                    <span className="text-gray-600">
-                      Sex: {requestedDataAccess[currentPatient?.id ?? 0]?.biologicalSex ? (
+                  <div className="flex flex-wrap gap-4 mt-1">
+                    <div className="flex items-center">
+                      <span className="text-gray-600 mr-1">Age:</span>
+                      <span className="font-medium">{currentPatient?.age}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-600 mr-1">Sex:</span>
+                      {requestedDataAccess[currentPatient?.id ?? 0]?.biologicalSex ? (
                         <span className="font-medium">{currentPatient?.biologicalSex}</span>
                       ) : (
                         <button 
@@ -154,10 +156,11 @@ export default function DoctorDashboard() {
                           Request access
                         </button>
                       )}
-                    </span>
-                    <span className="text-gray-600">
-                      Last Visit: <span className="font-medium">{currentPatient?.lastVisit}</span>
-                    </span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-600 mr-1">Last Visit:</span>
+                      <span className="font-medium">{currentPatient?.lastVisit}</span>
+                    </div>
                   </div>
                 </div>
                 <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors">
@@ -170,11 +173,11 @@ export default function DoctorDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Reported Symptoms</h3>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {currentPatient?.recentSymptoms.map((symptom, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
+                    <li key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md">
                       <svg
-                        className="w-5 h-5 text-red-500 mt-0.5"
+                        className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
                         fill="currentColor"
@@ -185,7 +188,7 @@ export default function DoctorDashboard() {
                           clipRule="evenodd"
                         />
                       </svg>
-                      <span>{symptom}</span>
+                      <span className="text-gray-800">{symptom}</span>
                     </li>
                   ))}
                 </ul>
@@ -193,11 +196,11 @@ export default function DoctorDashboard() {
 
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Pending Tests</h3>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {currentPatient?.pendingTests.map((test, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
+                    <li key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md">
                       <svg
-                        className="w-5 h-5 text-blue-500 mt-0.5"
+                        className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
                         fill="currentColor"
@@ -208,7 +211,7 @@ export default function DoctorDashboard() {
                           clipRule="evenodd"
                         />
                       </svg>
-                      <span>{test}</span>
+                      <span className="text-gray-800">{test}</span>
                     </li>
                   ))}
                 </ul>
@@ -224,13 +227,13 @@ export default function DoctorDashboard() {
                 <div className="space-y-4">
                   {suggestedConditions.map(condition => (
                     <div key={condition.id} className="border border-gray-200 rounded-md p-4">
-                      <h4 className="font-medium text-gray-800">{condition.name}</h4>
-                      <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700">Matching Symptoms:</h5>
-                          <ul className="mt-1 text-sm space-y-1">
+                      <h4 className="font-medium text-gray-800 mb-3">{condition.name}</h4>
+                      <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <h5 className="text-sm font-medium text-gray-700 mb-2">Matching Symptoms:</h5>
+                          <ul className="mt-1 text-sm space-y-2">
                             {condition.symptoms.map((symptom, idx) => (
-                              <li key={idx} className="flex items-center gap-1.5">
+                              <li key={idx} className="flex items-center gap-2">
                                 <span
                                   className={
                                     currentPatient?.recentSymptoms.some(s => 
@@ -240,16 +243,16 @@ export default function DoctorDashboard() {
                                       : "w-2 h-2 bg-gray-300 rounded-full"
                                   }
                                 ></span>
-                                {symptom}
+                                <span className="text-gray-800">{symptom}</span>
                               </li>
                             ))}
                           </ul>
                         </div>
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700">Recommended Tests:</h5>
-                          <ul className="mt-1 text-sm space-y-1">
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <h5 className="text-sm font-medium text-gray-700 mb-2">Recommended Tests:</h5>
+                          <ul className="mt-1 text-sm space-y-2">
                             {condition.relatedTests.map((test, idx) => (
-                              <li key={idx} className="flex items-center gap-1.5">
+                              <li key={idx} className="flex items-center gap-2">
                                 <span
                                   className={
                                     currentPatient?.pendingTests.includes(test)
@@ -257,7 +260,7 @@ export default function DoctorDashboard() {
                                       : "w-2 h-2 bg-gray-300 rounded-full"
                                   }
                                 ></span>
-                                {test}
+                                <span className="text-gray-800">{test}</span>
                               </li>
                             ))}
                           </ul>
@@ -276,32 +279,32 @@ export default function DoctorDashboard() {
                 Some patient data is protected to maintain privacy. You can request access to this information when medically necessary.
               </p>
               
-              <div className="border border-gray-200 rounded-md p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <div className="border border-gray-200 rounded-md p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-blue-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
                     </svg>
-                    <span className="font-medium">Biological Sex</span>
+                    <span className="font-medium text-gray-800">Biological Sex</span>
                   </div>
                   {requestedDataAccess[currentPatient?.id ?? 0]?.biologicalSex ? (
                     <span className="text-green-600 text-sm font-medium">Access Granted</span>
                   ) : (
                     <button 
                       onClick={() => currentPatient && requestSexDataAccess(currentPatient.id)}
-                      className="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700 transition-colors"
+                      className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded hover:bg-blue-700 transition-colors"
                     >
                       Request Access
                     </button>
                   )}
                 </div>
                 
-                <div className="bg-gray-50 p-3 rounded">
+                <div className="bg-gray-50 p-4 rounded-md">
                   {requestedDataAccess[currentPatient?.id ?? 0]?.biologicalSex ? (
                     <p className="text-gray-800">{currentPatient?.biologicalSex}</p>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <div className="flex items-center gap-3">
+                      <svg className="w-5 h-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                       </svg>
                       <p className="text-gray-500">Protected information - requires explicit access request</p>
@@ -309,7 +312,7 @@ export default function DoctorDashboard() {
                   )}
                 </div>
                 
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 mt-3">
                   Patient will be notified of your request and must consent before this information is shared.
                 </p>
               </div>

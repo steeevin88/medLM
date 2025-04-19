@@ -10,7 +10,7 @@ export default function Header() {
   const userRole = isLoaded ? user?.publicMetadata?.role as string | undefined : undefined;
 
   return (
-    <header className="bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-md">
+    <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold">
           <svg
