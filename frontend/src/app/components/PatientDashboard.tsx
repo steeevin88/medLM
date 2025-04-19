@@ -8,7 +8,7 @@ export default function PatientDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [symptomInput, setSymptomInput] = useState('');
   const [userSymptoms, setUserSymptoms] = useState<string[]>([
-    'Headache', 
+    'Headache',
     'Dizziness'
   ]);
 
@@ -78,7 +78,7 @@ export default function PatientDashboard() {
   // Chat handler functions
   const sendMessage = () => {
     if (!symptomsDescription.trim()) return;
-    
+
     // Add user message
     const newUserMessage = {
       id: chatMessages.length + 1,
@@ -86,10 +86,10 @@ export default function PatientDashboard() {
       message: symptomsDescription,
       timestamp: 'Just now'
     };
-    
+
     setChatMessages(prev => [...prev, newUserMessage]);
     setSymptomsDescription('');
-    
+
     // Simulate MedLM AI response after a short delay
     setTimeout(() => {
       const aiResponse = {
@@ -98,36 +98,36 @@ export default function PatientDashboard() {
         message: `Thank you for sharing. Based on your description, I've noted symptoms like ${userSymptoms.join(', ')}. Is there anything else you'd like to add about how you're feeling?`,
         timestamp: 'Just now'
       };
-      
+
       setChatMessages(prev => [...prev, aiResponse]);
     }, 1000);
   };
-  
+
   const handleChatKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   };
-  
+
   const sendToDoctor = (doctorId: number) => {
     setIsSendingToDoctor(true);
     setSelectedDoctor(doctorId);
-    
+
     // Simulate sending to doctor
     setTimeout(() => {
       const doctorName = doctorsMockData.find(d => d.id === doctorId)?.name || 'the doctor';
-      
+
       const confirmationMessage = {
         id: chatMessages.length + 1,
         sender: 'medlm' as const,
         message: `Your symptom information has been securely sent to ${doctorName}. They will review it and respond soon.`,
         timestamp: 'Just now'
       };
-      
+
       setChatMessages(prev => [...prev, confirmationMessage]);
       setIsSendingToDoctor(false);
-      
+
       // Simulate doctor response after a delay
       setTimeout(() => {
         const doctorResponse = {
@@ -136,13 +136,13 @@ export default function PatientDashboard() {
           message: `Hello, this is ${doctorName}. I've reviewed your symptoms. Based on what you've described, I recommend scheduling a video consultation to discuss treatment options.`,
           timestamp: 'Just now'
         };
-        
+
         setChatMessages(prev => [...prev, doctorResponse]);
       }, 3000);
     }, 1500);
   };
 
-  const filteredDoctors = doctorsMockData.filter(doctor => 
+  const filteredDoctors = doctorsMockData.filter(doctor =>
     doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -165,12 +165,12 @@ export default function PatientDashboard() {
       <div className="lg:col-span-1 space-y-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Symptoms</h2>
-          
+
           <div className="flex gap-2 mb-4">
             <input
               type="text"
               placeholder="Add a symptom..."
-              className="flex-1 p-2 border border-gray-300 rounded-md"
+              className="flex-1 p-2 border border-gray-300 rounded-md text-black"
               value={symptomInput}
               onChange={(e) => setSymptomInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -182,14 +182,14 @@ export default function PatientDashboard() {
               Add
             </button>
           </div>
-          
+
           <div className="space-y-2">
             {userSymptoms.length === 0 ? (
               <p className="text-gray-500 text-center py-4">No symptoms added yet.</p>
             ) : (
               userSymptoms.map((symptom, idx) => (
                 <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
-                  <span>{symptom}</span>
+                  <span className="text-black">{symptom}</span>
                   <button
                     onClick={() => removeSymptom(symptom)}
                     className="text-red-500 hover:text-red-700"
@@ -213,43 +213,43 @@ export default function PatientDashboard() {
                 <p className="text-sm text-gray-500">Hide personal information from doctors</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={sharingPreferences.anonymousMode} 
+                <input
+                  type="checkbox"
+                  checked={sharingPreferences.anonymousMode}
                   onChange={() => handleSharingChange('anonymousMode')}
-                  className="sr-only peer" 
+                  className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium text-gray-800">Share Medical History</h3>
                 <p className="text-sm text-gray-500">Allow doctors to view past conditions</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={sharingPreferences.shareMedicalHistory}
                   onChange={() => handleSharingChange('shareMedicalHistory')}
-                  className="sr-only peer" 
+                  className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium text-gray-800">Data for Research</h3>
                 <p className="text-sm text-gray-500">Allow anonymous data for medical research</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={sharingPreferences.shareForResearch}
                   onChange={() => handleSharingChange('shareForResearch')}
-                  className="sr-only peer" 
+                  className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
@@ -261,11 +261,11 @@ export default function PatientDashboard() {
                 <p className="text-sm text-gray-500">Show biological sex to all doctors</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={sharingPreferences.shareBiologicalSex}
                   onChange={() => handleSharingChange('shareBiologicalSex')}
-                  className="sr-only peer" 
+                  className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
@@ -298,7 +298,7 @@ export default function PatientDashboard() {
                       <p className="text-sm text-gray-600 mt-1">Requested {request.requestDate}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-2 justify-end">
                     <button
                       onClick={() => handleDenyRequest(request.id)}
@@ -340,14 +340,14 @@ export default function PatientDashboard() {
               AI-Powered
             </span>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-gray-50 to-white">
             {chatMessages.map((message) => (
-              <div 
-                key={message.id} 
+              <div
+                key={message.id}
                 className={`flex ${
-                  message.sender === 'user' 
-                    ? 'justify-end' 
+                  message.sender === 'user'
+                    ? 'justify-end'
                     : 'justify-start'
                 }`}
               >
@@ -364,17 +364,17 @@ export default function PatientDashboard() {
                     )}
                   </div>
                 )}
-                
+
                 <div className="max-w-[75%]">
                   {message.sender !== 'user' && (
                     <div className="text-xs font-medium text-gray-500 mb-1 ml-1">
                       {message.sender === 'medlm' ? 'MedLM Assistant' : 'Dr. Johnson'}
                     </div>
                   )}
-                  <div 
+                  <div
                     className={`rounded-2xl px-4 py-3 inline-block ${
-                      message.sender === 'user' 
-                        ? 'bg-blue-500 text-white rounded-tr-none' 
+                      message.sender === 'user'
+                        ? 'bg-blue-500 text-white rounded-tr-none'
                         : message.sender === 'medlm'
                           ? 'bg-gray-100 text-gray-800 rounded-tl-none'
                           : 'bg-green-100 text-gray-800 rounded-tl-none border border-green-200'
@@ -386,7 +386,7 @@ export default function PatientDashboard() {
                     {message.timestamp}
                   </div>
                 </div>
-                
+
                 {message.sender === 'user' && (
                   <div className="w-8 h-8 rounded-full bg-blue-500 flex-shrink-0 flex items-center justify-center ml-2">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-white">
@@ -397,12 +397,12 @@ export default function PatientDashboard() {
               </div>
             ))}
           </div>
-          
+
           <div className="p-4 border-t border-gray-100">
             <div className="relative">
               <textarea
                 placeholder="Type your symptoms and health concerns..."
-                className="w-full p-3 pr-14 border border-gray-300 rounded-lg resize-none h-20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 pr-14 border border-gray-300 rounded-lg resize-none h-20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 value={symptomsDescription}
                 onChange={(e) => setSymptomsDescription(e.target.value)}
                 onKeyDown={handleChatKeyDown}
@@ -411,8 +411,8 @@ export default function PatientDashboard() {
                 onClick={sendMessage}
                 disabled={!symptomsDescription.trim()}
                 className={`absolute right-3 bottom-3 p-2 rounded-full transition-colors ${
-                  symptomsDescription.trim() 
-                    ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                  symptomsDescription.trim()
+                    ? 'bg-blue-500 text-white hover:bg-blue-600'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
@@ -433,7 +433,7 @@ export default function PatientDashboard() {
               Powered by MedLM
             </span>
           </div>
-          
+
           {userSymptoms.length === 0 ? (
             <div className="text-center py-8">
               <svg
@@ -460,7 +460,7 @@ export default function PatientDashboard() {
               <p className="mb-4 text-gray-700">
                 Based on your symptoms, here are some potential conditions to discuss with a healthcare provider:
               </p>
-              
+
               <div className="space-y-3 mb-6">
                 {matchedConditions.map(condition => (
                   <div
@@ -475,7 +475,7 @@ export default function PatientDashboard() {
                     <div className="flex justify-between items-start">
                       <h3 className="font-medium text-gray-800">{condition.name}</h3>
                       <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                        {condition.symptoms.filter(symptom => 
+                        {condition.symptoms.filter(symptom =>
                           userSymptoms.some(s => s.toLowerCase().includes(symptom.toLowerCase()))
                         ).length} matching symptoms
                       </span>
@@ -486,7 +486,7 @@ export default function PatientDashboard() {
                   </div>
                 ))}
               </div>
-              
+
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
                 <div className="flex items-start gap-3">
                   <svg
@@ -531,7 +531,7 @@ export default function PatientDashboard() {
                 </svg>
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <h3 className="font-medium text-gray-800 mb-3">Common Symptoms</h3>
@@ -553,7 +553,7 @@ export default function PatientDashboard() {
                   ))}
                 </ul>
               </div>
-              
+
               <div>
                 <h3 className="font-medium text-gray-800 mb-3">Common Treatments</h3>
                 <ul className="space-y-2">
@@ -576,7 +576,7 @@ export default function PatientDashboard() {
                   ))}
                 </ul>
               </div>
-            
+
               <div>
                 <h3 className="font-medium text-gray-800 mb-3">Recommended Tests</h3>
                 <div className="flex flex-wrap gap-2">
@@ -588,7 +588,7 @@ export default function PatientDashboard() {
                 </div>
               </div>
             </div>
-            
+
             <div className="mt-6 pt-6 border-t border-gray-200">
               <button className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors">
                 Connect with a specialist
@@ -598,12 +598,12 @@ export default function PatientDashboard() {
         ) : (
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Find a Specialist</h2>
-            
+
             <div className="relative mb-6">
               <input
                 type="text"
                 placeholder="Search specialists..."
-                className="w-full p-3 border border-gray-300 rounded-md pr-10"
+                className="w-full p-3 border border-gray-300 rounded-md pr-10 text-black"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -620,7 +620,7 @@ export default function PatientDashboard() {
                 />
               </svg>
             </div>
-            
+
             <div className="space-y-4">
               {filteredDoctors.map(doctor => (
                 <div key={doctor.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
@@ -677,17 +677,17 @@ export default function PatientDashboard() {
                       {doctor.availableSlots} available slots • {doctor.yearsExperience} yrs exp.
                     </div>
                     <div className="flex space-x-2">
-                      <button 
+                      <button
                         onClick={() => sendToDoctor(doctor.id)}
                         disabled={isSendingToDoctor}
                         className={`flex-1 px-3 py-1.5 rounded-md text-sm text-center ${
-                          isSendingToDoctor 
-                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                          isSendingToDoctor
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                             : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                         }`}
                       >
-                        {isSendingToDoctor && selectedDoctor === doctor.id 
-                          ? 'Sending...' 
+                        {isSendingToDoctor && selectedDoctor === doctor.id
+                          ? 'Sending...'
                           : 'Send Symptoms'}
                       </button>
                       <button className="flex-1 bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 transition-colors text-center">
@@ -703,4 +703,4 @@ export default function PatientDashboard() {
       </div>
     </div>
   );
-} 
+}

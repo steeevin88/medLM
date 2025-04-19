@@ -15,7 +15,7 @@ export default function DoctorDashboard() {
     }));
   };
 
-  const filteredPatients = patientsMockData.filter(patient => 
+  const filteredPatients = patientsMockData.filter(patient =>
     patient.anonymizedId.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.recentSymptoms.some(symptom => symptom.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -44,7 +44,7 @@ export default function DoctorDashboard() {
             <input
               type="text"
               placeholder="Search by ID or symptoms..."
-              className="w-full p-2 border border-gray-300 rounded-md pr-10"
+              className="w-full p-2 border border-gray-300 rounded-md pr-10 text-black"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -149,7 +149,7 @@ export default function DoctorDashboard() {
                       {requestedDataAccess[currentPatient?.id ?? 0]?.biologicalSex ? (
                         <span className="font-medium">{currentPatient?.biologicalSex}</span>
                       ) : (
-                        <button 
+                        <button
                           onClick={() => currentPatient && requestSexDataAccess(currentPatient.id)}
                           className="text-blue-600 text-sm underline font-normal hover:text-blue-800"
                         >
@@ -236,7 +236,7 @@ export default function DoctorDashboard() {
                               <li key={idx} className="flex items-center gap-2">
                                 <span
                                   className={
-                                    currentPatient?.recentSymptoms.some(s => 
+                                    currentPatient?.recentSymptoms.some(s =>
                                       s.toLowerCase().includes(symptom.toLowerCase())
                                     )
                                       ? "w-2 h-2 bg-green-500 rounded-full"
@@ -271,14 +271,14 @@ export default function DoctorDashboard() {
                 </div>
               )}
             </div>
-            
+
             {/* Data Access Request Section */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Protected Patient Data</h3>
               <p className="text-gray-600 mb-4">
                 Some patient data is protected to maintain privacy. You can request access to this information when medically necessary.
               </p>
-              
+
               <div className="border border-gray-200 rounded-md p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -290,7 +290,7 @@ export default function DoctorDashboard() {
                   {requestedDataAccess[currentPatient?.id ?? 0]?.biologicalSex ? (
                     <span className="text-green-600 text-sm font-medium">Access Granted</span>
                   ) : (
-                    <button 
+                    <button
                       onClick={() => currentPatient && requestSexDataAccess(currentPatient.id)}
                       className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded hover:bg-blue-700 transition-colors"
                     >
@@ -298,7 +298,7 @@ export default function DoctorDashboard() {
                     </button>
                   )}
                 </div>
-                
+
                 <div className="bg-gray-50 p-4 rounded-md">
                   {requestedDataAccess[currentPatient?.id ?? 0]?.biologicalSex ? (
                     <p className="text-gray-800">{currentPatient?.biologicalSex}</p>
@@ -311,7 +311,7 @@ export default function DoctorDashboard() {
                     </div>
                   )}
                 </div>
-                
+
                 <p className="text-xs text-gray-500 mt-3">
                   Patient will be notified of your request and must consent before this information is shared.
                 </p>
@@ -322,4 +322,4 @@ export default function DoctorDashboard() {
       </div>
     </div>
   );
-} 
+}
