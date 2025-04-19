@@ -3,7 +3,6 @@
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
 import React from 'react';
-import Header from "./components/Header";
 import Footer from "./components/Footer";
 import LandingHero from "./components/LandingHero";
 import DoctorDashboard from "./components/DoctorDashboard";
@@ -62,7 +61,6 @@ function RoleBasedDashboard() {
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      <Header />
 
       <main className="flex-grow">
         <SignedOut>

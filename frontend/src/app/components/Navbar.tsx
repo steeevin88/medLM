@@ -2,11 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
-// import Image from 'next/image'; // Removed as not used
 import { SignedIn, SignedOut, UserButton, SignInButton, useUser } from '@clerk/nextjs';
-import { Button } from "@/components/ui/button"; // Import Shadcn Button
+import { Button } from "@/components/ui/button";
 
-export default function Header() {
+export default function Navbar() {
   const { user, isLoaded } = useUser();
  const userRole = isLoaded ? user?.publicMetadata?.role as string | undefined : undefined;
 
@@ -39,6 +38,7 @@ export default function Header() {
               </>
             )}
             <Link href="/about" className="hover:text-blue-100 transition">About</Link>
+            <Link href="/profiles" className="hover:text-blue-100 transition">Profiles</Link>
           </nav>
         </SignedIn>
 
