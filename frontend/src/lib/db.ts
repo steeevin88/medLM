@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 let prisma: PrismaClient;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const global: any;
 
 if (process.env.NODE_ENV === "production") {
