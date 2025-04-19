@@ -21,7 +21,16 @@ function RoleBasedDashboard() {
   }, [isLoaded, user, router]);
 
   if (!isLoaded || !user || (user && !user.publicMetadata?.role)) {
-    return <div>Loading user data or redirecting...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600 animate-pulse">
+            Loading user data or redirecting...
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const userRole = user.publicMetadata.role as string;
