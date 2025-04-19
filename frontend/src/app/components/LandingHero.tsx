@@ -1,20 +1,15 @@
 "use client";
 
 import React from 'react';
-import { useUser } from '../context/UserContext';
+// import { useUser } from '../context/UserContext'; // Remove this import
 
 export default function LandingHero() {
-  const { setUserRole, setIsAuthenticated } = useUser();
+  // Remove state setting logic - Clerk handles authentication
+  // const { setUserRole, setIsAuthenticated } = useUser();
 
-  const handleDoctorLogin = () => {
-    setUserRole('doctor');
-    setIsAuthenticated(true);
-  };
-
-  const handlePatientLogin = () => {
-    setUserRole('patient');
-    setIsAuthenticated(true);
-  };
+  // Remove these handlers - login flow is handled by Clerk's SignInButton
+  // const handleDoctorLogin = () => { ... };
+  // const handlePatientLogin = () => { ... };
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-teal-50 py-16 md:py-24">
@@ -27,22 +22,21 @@ export default function LandingHero() {
             <p className="text-lg text-gray-600 mb-8">
               Connect anonymously with healthcare providers, get AI-powered insights, and maintain control of your medical data.
             </p>
-            
+
+            {/* Replace buttons with links or info about signing in */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={handlePatientLogin}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                For Patients
-              </button>
-              <button
-                onClick={handleDoctorLogin}
-                className="bg-white text-blue-600 border border-blue-200 px-6 py-3 rounded-lg text-lg font-medium hover:bg-blue-50 transition-colors"
-              >
-                For Doctors
-              </button>
+              <p className="text-gray-700">Please sign in to access your dashboard.</p>
+              {/* Optionally, add SignInButton here if not present elsewhere on the page */}
+              {/* Example:
+              import { SignInButton } from "@clerk/nextjs";
+              <SignInButton mode="modal">
+                <button className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition-colors">
+                  Sign In / Sign Up
+                </button>
+              </SignInButton>
+              */}
             </div>
-            
+
             <div className="mt-8 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-blue-600"
@@ -89,7 +83,7 @@ export default function LandingHero() {
               <span className="text-gray-600">Full control of your medical data sharing</span>
             </div>
           </div>
-          
+
           <div className="relative">
             <div className="bg-white p-6 rounded-xl shadow-lg">
               <div className="flex items-center mb-6">
@@ -105,12 +99,12 @@ export default function LandingHero() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 ml-3">AI Health Assistant</h3>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="bg-gray-100 p-3 rounded-lg">
                   <p className="text-gray-700">I've been experiencing headaches and dizziness for the past week.</p>
                 </div>
-                
+
                 <div className="bg-blue-100 p-3 rounded-lg">
                   <p className="text-blue-800">Based on your symptoms, I'd like to ask a few follow-up questions:</p>
                   <ul className="mt-2 space-y-1 text-blue-800">
@@ -119,11 +113,11 @@ export default function LandingHero() {
                     <li>• Have you experienced any changes in vision?</li>
                   </ul>
                 </div>
-                
+
                 <div className="bg-gray-100 p-3 rounded-lg">
                   <p className="text-gray-700">The headaches come and go, and the dizziness gets worse when I stand up quickly.</p>
                 </div>
-                
+
                 <div className="bg-blue-100 p-3 rounded-lg">
                   <p className="text-blue-800">
                     Your symptoms could be related to several conditions including dehydration, low blood pressure, or migraine.
@@ -131,7 +125,7 @@ export default function LandingHero() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="mt-6 border-t border-gray-200 pt-4 flex justify-between items-center">
                 <span className="text-sm text-gray-500">Your privacy is guaranteed</span>
                 <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
@@ -139,7 +133,7 @@ export default function LandingHero() {
                 </button>
               </div>
             </div>
-            
+
             <div className="hidden md:block absolute -top-6 -right-6 w-24 h-24 bg-yellow-100 rounded-full z-0"></div>
             <div className="hidden md:block absolute -bottom-6 -left-6 w-32 h-32 bg-blue-100 rounded-full z-0"></div>
           </div>
@@ -147,4 +141,4 @@ export default function LandingHero() {
       </div>
     </div>
   );
-} 
+}
