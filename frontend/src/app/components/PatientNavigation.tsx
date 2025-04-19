@@ -1,0 +1,118 @@
+"use client";
+
+import React from 'react';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { 
+  MessageSquare, 
+  FileText, 
+  User, 
+  Heart, 
+  Activity, 
+  Calendar, 
+  Settings,
+  BellIcon
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
+
+interface NavigationProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+}
+
+export default function PatientNavigation({ activeTab, onTabChange }: NavigationProps) {
+  const navigationItems = [
+    {
+      id: 'chat',
+      name: 'Chat',
+      icon: <MessageSquare className="h-5 w-5" />,
+      notifications: 0
+    },
+    {
+      id: 'profile',
+      name: 'Health Profile',
+      icon: <User className="h-5 w-5" />,
+      notifications: 0
+    },
+    {
+      id: 'documents',
+      name: 'Medical Documents',
+      icon: <FileText className="h-5 w-5" />,
+      notifications: 1
+    },
+    {
+      id: 'vitals',
+      name: 'Health Vitals',
+      icon: <Heart className="h-5 w-5" />,
+      notifications: 0
+    },
+    {
+      id: 'activity',
+      name: 'Activity & Exercise',
+      icon: <Activity className="h-5 w-5" />,
+      notifications: 0
+    },
+    {
+      id: 'appointments',
+      name: 'Appointments',
+      icon: <Calendar className="h-5 w-5" />,
+      notifications: 2
+    }
+  ];
+
+  return (
+    <Card className="h-full flex flex-col overflow-hidden">
+      <div className="p-4 border-b flex items-center gap-3">
+        <Avatar className="h-10 w-10">
+          <AvatarImage src="/avatar-placeholder.png" />
+          <AvatarFallback className="bg-primary text-primary-foreground">JP</AvatarFallback>
+        </Avatar>
+        <div className="flex-grow min-w-0">
+          <h2 className="font-medium text-sm truncate">Jane Patel</h2>
+          <p className="text-xs text-muted-foreground">Patient</p>
+        </div>
+        <Button size="icon" variant="ghost" className="relative flex-shrink-0">
+          <BellIcon className="h-5 w-5" />
+          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">3</span>
+        </Button>
+      </div>
+      <div className="px-2 py-4 flex-grow overflow-y-auto">
+        <div className="space-y-1 text-sm font-medium">
+          {navigationItems.map((item) => (
+            <Button
+              key={item.id}
+              variant={activeTab === item.id ? "default" : "ghost"}
+              className={cn(
+                "w-full flex justify-start gap-2 py-2 px-3 mb-1",
+                "text-left",
+                activeTab === item.id 
+                  ? "" 
+                  : "text-muted-foreground"
+              )}
+              onClick={() => onTabChange(item.id)}
+            >
+              <span className="flex-shrink-0">{item.icon}</span>
+              <span className="truncate">{item.name}</span>
+              {item.notifications > 0 && (
+                <Badge 
+                  variant="secondary" 
+                  className="ml-auto flex-shrink-0 px-1 min-w-5 h-5 text-xs"
+                >
+                  {item.notifications}
+                </Badge>
+              )}
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div className="p-3 border-t">
+        <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => onTabChange('settings')}>
+          <Settings className="h-4 w-4" />
+          <span className="truncate">Settings</span>
+        </Button>
+      </div>
+    </Card>
+  );
+} 

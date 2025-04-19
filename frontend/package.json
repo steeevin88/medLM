@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "pnpm dlx prisma generate"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^4.13.23",

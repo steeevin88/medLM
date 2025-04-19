@@ -2,12 +2,20 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
-import React, { useEffect } from 'react';
-import PatientDashboard from "../components/PatientDashboard";
+import React, { useEffect, useState } from 'react';
+import PatientNavigation from "../components/PatientNavigation";
+import PatientOnboarding from "../components/PatientOnboarding";
+import DocumentUpload from "../components/DocumentUpload";
+import PatientChat from "../components/PatientChat";
+import HealthVitals from "../components/HealthVitals";
+import ActivityExercise from "../components/ActivityExercise";
+import Appointments from "../components/Appointments";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function PatientPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState('chat');
 
   useEffect(() => {
     if (isLoaded) {
@@ -31,6 +39,36 @@ export default function PatientPage() {
     }
   }, [isLoaded, user, router]);
 
+  const renderActiveTabContent = () => {
+    switch(activeTab) {
+      case 'chat':
+        return <PatientChat />;
+      case 'profile':
+        return <PatientOnboarding />;
+      case 'documents':
+        return <DocumentUpload />;
+      case 'vitals':
+        return <HealthVitals />;
+      case 'activity':
+        return <ActivityExercise />;
+      case 'appointments':
+        return <Appointments />;
+      case 'settings':
+        return (
+          <Card className="h-full">
+            <CardContent className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <h3 className="text-lg font-medium mb-2">Settings</h3>
+                <p className="text-muted-foreground">Settings page is coming soon.</p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      default:
+        return <PatientChat />;
+    }
+  };
+
   if (!isLoaded || !user) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
@@ -43,9 +81,23 @@ export default function PatientPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Patient Dashboard</h1>
-      <PatientDashboard />
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-6rem)]">
+        {/* Left sidebar with navigation */}
+        <div className="md:col-span-3 lg:col-span-2 h-auto md:h-full">
+          <PatientNavigation 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab} 
+          />
+        </div>
+        
+        {/* Main content area */}
+        <div className="md:col-span-9 lg:col-span-10 h-auto md:h-full overflow-hidden">
+          <div className="h-full overflow-hidden">
+            {renderActiveTabContent()}
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 
