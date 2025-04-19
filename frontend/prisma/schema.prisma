@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String?
+  email     String?  @unique
+  auth0Id   String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sex            Boolean
+  age            Int
+  height         Int
+  weight         Int
+  activityLevel  ActivityLevel
+  allergies      Allergy[]
+  medications    Medication[]
+  healthIssues   HealthIssue[]
+  diet           Diet[]
+  additionalInfo String?
+  heartRate      Int?
+  bloodPressure  String?
+}
+
+enum ActivityLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Allergy {
+  GLUTEN
+  LACTOSE
+  NUTS
+  SEAFOOD
+  DAIRY
+  EGGS
+  SOY
+  PEANUTS
+  POLLEN
+  LATEX
+  OTHER
+}
+
+enum Medication {
+  ASPIRIN
+  IBUPROFEN
+  ANTIBIOTICS
+  BLOOD_PRESSURE_MEDICATION
+  INSULIN
+  OTHER
+}
+
+enum HealthIssue {
+  DIABETES
+  HEART_DISEASE
+  HIGH_BLOOD_PRESSURE
+  ASTHMA
+  CANCER
+  OTHER
+}
+
+enum Diet {
+  VEGETARIAN
+  VEGAN
+  KETO
+  PALEO
+  MEDITERRANEAN
+  GLUTEN_FREE
+  DAIRY_FREE
+  LOW_CARB
+  OTHER
+}
