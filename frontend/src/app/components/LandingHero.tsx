@@ -3,16 +3,28 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SignInButton } from "@clerk/nextjs";
+import { SignInButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { useRouter } from 'next/navigation';
 // import { Icons } from '@/components/icons';
 
 export default function LandingHero() {
-  // Remove state setting logic - Clerk handles authentication
-  // const { setUserRole, setIsAuthenticated } = useUser();
-
-  // Remove these handlers - login flow is handled by Clerk's SignInButton
-  // const handleDoctorLogin = () => { ... };
-  // const handlePatientLogin = () => { ... };
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+  
+  const handleDashboardNavigation = () => {
+    if (isLoaded && user && user.publicMetadata?.role) {
+      const userRole = user.publicMetadata.role as string;
+      if (userRole === 'doctor') {
+        router.push('/doctor');
+      } else if (userRole === 'patient') {
+        router.push('/patient');
+      } else {
+        router.push('/select-role');
+      }
+    } else if (isLoaded && user) {
+      router.push('/select-role');
+    }
+  };
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-teal-50 py-16 md:py-24">
@@ -28,11 +40,20 @@ export default function LandingHero() {
 
             {/* Sign In Info/Button */}
             <div className="flex flex-col sm:flex-row gap-4 items-start">
-              <p className="text-gray-700 pt-2">Please sign in to access your dashboard.</p>
-              {/* Add SignInButton wrapped in Shadcn Button if desired */}
-              <SignInButton mode="modal">
-                <Button size="lg">Sign In / Sign Up</Button>
-              </SignInButton>
+              <SignedOut>
+                <p className="text-gray-700 pt-2">Please sign in to access your dashboard.</p>
+                {/* Add SignInButton wrapped in Shadcn Button if desired */}
+                <SignInButton mode="modal">
+                  <Button size="lg">Sign In / Sign Up</Button>
+                </SignInButton>
+              </SignedOut>
+              
+              <SignedIn>
+                <p className="text-gray-700 pt-2">Welcome back! Access your personalized dashboard.</p>
+                <Button size="lg" onClick={handleDashboardNavigation}>
+                  Go to Dashboard
+                </Button>
+              </SignedIn>
             </div>
 
             <div className="mt-8 flex items-center gap-2">
