@@ -2,7 +2,7 @@ export const doctorsMockData = [
   {
     id: 1,
     name: "Dr. Sarah Johnson",
-    specialty: "Internal Medicine",
+    specialty: "Internal Medicine", 
     yearsExperience: 12,
     rating: 4.8,
     profileImage: "/doctors/doctor1.jpg",
@@ -64,6 +64,51 @@ export const patientsMockData = [
     recentSymptoms: ["Fever", "Cough", "Runny nose"],
     pendingTests: ["Throat culture"],
     lastVisit: "2023-11-10"
+  },
+  {
+    id: 104,
+    anonymizedId: "PT93847",
+    age: 45,
+    biologicalSex: "Female",
+    recentSymptoms: ["Joint pain", "Morning stiffness", "Fatigue"],
+    pendingTests: ["Rheumatoid factor test", "X-rays"],
+    lastVisit: "2023-11-05"
+  },
+  {
+    id: 105,
+    anonymizedId: "PT67234",
+    age: 29,
+    biologicalSex: "Male",
+    recentSymptoms: ["Anxiety", "Insomnia", "Loss of appetite"],
+    pendingTests: ["Psychological evaluation"],
+    lastVisit: "2023-11-08"
+  },
+  {
+    id: 106,
+    anonymizedId: "PT54321",
+    age: 62,
+    biologicalSex: "Female",
+    recentSymptoms: ["Blurred vision", "Frequent urination", "Thirst"],
+    pendingTests: ["Blood glucose test", "HbA1c"],
+    lastVisit: "2023-11-01"
+  },
+  {
+    id: 107,
+    anonymizedId: "PT89012",
+    age: 41,
+    biologicalSex: "Male",
+    recentSymptoms: ["Lower back pain", "Numbness in legs", "Muscle weakness"],
+    pendingTests: ["MRI", "Nerve conduction study"],
+    lastVisit: "2023-10-28"
+  },
+  {
+    id: 108,
+    anonymizedId: "PT34567",
+    age: 23,
+    biologicalSex: "Female",
+    recentSymptoms: ["Skin rash", "Itching", "Swelling"],
+    pendingTests: ["Allergy testing", "Skin biopsy"],
+    lastVisit: "2023-11-12"
   }
 ];
 
@@ -89,4 +134,4 @@ export const conditionsMockData = [
     commonTreatments: ["Inhalers", "Anti-inflammatory medications", "Avoiding triggers"],
     relatedTests: ["Lung function tests", "Allergy testing"]
   }
-]; 
+];
