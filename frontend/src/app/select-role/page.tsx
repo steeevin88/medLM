@@ -46,9 +46,13 @@ export default function SelectRolePage() {
       await user.reload();
       router.push('/'); // Redirect to main page, which will show the correct dashboard
 
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +66,7 @@ export default function SelectRolePage() {
     <div className="container mx-auto px-4 py-16 flex justify-center items-center min-h-screen">
       <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Select Your Role</h1>
-        <p className="text-gray-600 mb-6 text-center">Please choose how you'll be using MedLM Connect.</p>
+        <p className="text-gray-600 mb-6 text-center">Please choose how you&apos;ll be using MedLM Connect.</p>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 mb-6">

@@ -102,11 +102,11 @@ export default function LandingHero() {
 
               <div className="space-y-4">
                 <div className="bg-gray-100 p-3 rounded-lg">
-                  <p className="text-gray-700">I've been experiencing headaches and dizziness for the past week.</p>
+                  <p className="text-gray-700">I&apos;ve been experiencing headaches and dizziness for the past week.</p>
                 </div>
 
                 <div className="bg-blue-100 p-3 rounded-lg">
-                  <p className="text-blue-800">Based on your symptoms, I'd like to ask a few follow-up questions:</p>
+                  <p className="text-blue-800">Based on your symptoms, I&apos;d like to ask a few follow-up questions:</p>
                   <ul className="mt-2 space-y-1 text-blue-800">
                     <li>• Are the headaches constant or intermittent?</li>
                     <li>• Does anything make the dizziness worse?</li>

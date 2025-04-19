@@ -2,12 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { SignedIn, SignedOut, UserButton, SignInButton, useUser } from '@clerk/nextjs';
 
 export default function Header() {
   const { user, isLoaded } = useUser();
-  const userRole = isLoaded ? user?.publicMetadata?.role as string | undefined : undefined;
+ const userRole = isLoaded ? user?.publicMetadata?.role as string | undefined : undefined;
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm text-black">
@@ -24,7 +23,7 @@ export default function Header() {
           MedLM Connect
         </Link>
 
-        {/* <SignedIn>
+        <SignedIn>
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="hover:text-blue-100 transition">Home</Link>
             {isLoaded && userRole === 'doctor' && (
@@ -39,7 +38,7 @@ export default function Header() {
             )}
             <Link href="/about" className="hover:text-blue-100 transition">About</Link>
           </nav>
-        </SignedIn> */}
+        </SignedIn>
 
         <div className="flex items-center gap-4">
           <SignedOut>
