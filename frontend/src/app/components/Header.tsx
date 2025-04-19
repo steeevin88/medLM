@@ -2,14 +2,16 @@
 
 import React from 'react';
 import Link from 'next/link';
+// import Image from 'next/image'; // Removed as not used
 import { SignedIn, SignedOut, UserButton, SignInButton, useUser } from '@clerk/nextjs';
+import { Button } from "@/components/ui/button"; // Import Shadcn Button
 
 export default function Header() {
   const { user, isLoaded } = useUser();
  const userRole = isLoaded ? user?.publicMetadata?.role as string | undefined : undefined;
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm text-black">
+    <header className="bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-md">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold">
           <svg
@@ -43,9 +45,9 @@ export default function Header() {
         <div className="flex items-center gap-4">
           <SignedOut>
             <SignInButton mode="modal">
-              <button className="bg-white text-blue-600 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-blue-50 transition-colors">
+              <Button variant="outline" size="sm" className="bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700">
                 Sign In
-              </button>
+              </Button>
             </SignInButton>
           </SignedOut>
           <SignedIn>

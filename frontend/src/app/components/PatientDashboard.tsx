@@ -2,6 +2,14 @@
 
 import React, { useState } from 'react';
 import { doctorsMockData, conditionsMockData } from '../context/MockData';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { X, SendHorizontal, Loader2, Search, User, Star } from 'lucide-react';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function PatientDashboard() {
   const [selectedCondition, setSelectedCondition] = useState<number | null>(null);
@@ -52,19 +60,19 @@ export default function PatientDashboard() {
     setUserSymptoms(userSymptoms.filter(s => s !== symptom));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       addSymptom();
     }
   };
 
-  const handleSharingChange = (setting: keyof typeof sharingPreferences) => {
-    setSharingPreferences(prev => ({
-      ...prev,
-      [setting]: !prev[setting]
-    }));
-  };
+  // const handleSharingChange = (setting: keyof typeof sharingPreferences) => {
+  //   setSharingPreferences(prev => ({
+  //     ...prev,
+  //     [setting]: !prev[setting]
+  //   }));
+  // };
 
   const handleApproveRequest = (requestId: number) => {
     setPendingRequests(prev => prev.filter(req => req.id !== requestId));
@@ -103,7 +111,7 @@ export default function PatientDashboard() {
     }, 1000);
   };
 
-  const handleChatKeyDown = (e: React.KeyboardEvent) => {
+  const handleChatKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -159,127 +167,130 @@ export default function PatientDashboard() {
     ? conditionsMockData.find(c => c.id === selectedCondition)
     : null;
 
+  // Helper function to render stars
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+    return (
+      <div className="flex items-center">
+        {[...Array(fullStars)].map((_, i) => (
+          <Star key={`full-${i}`} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+        ))}
+        {/* Half star logic can be added here if needed */}
+        {[...Array(emptyStars)].map((_, i) => (
+          <Star key={`empty-${i}`} className="w-4 h-4 text-gray-300" /> // Use gray for empty
+        ))}
+        <span className="ml-2 text-sm text-muted-foreground">{rating.toFixed(1)}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
       {/* Left Sidebar - Symptoms & Privacy */}
       <div className="lg:col-span-1 space-y-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Symptoms</h2>
-
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              placeholder="Add a symptom..."
-              className="flex-1 p-2 border border-gray-300 rounded-md text-black"
-              value={symptomInput}
-              onChange={(e) => setSymptomInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <button
-              onClick={addSymptom}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
-            >
-              Add
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            {userSymptoms.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No symptoms added yet.</p>
-            ) : (
-              userSymptoms.map((symptom, idx) => (
-                <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
-                  <span className="text-black">{symptom}</span>
-                  <button
-                    onClick={() => removeSymptom(symptom)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                      <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                    </svg>
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Privacy Settings</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-gray-800">Anonymous Mode</h3>
-                <p className="text-sm text-gray-500">Hide personal information from doctors</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sharingPreferences.anonymousMode}
-                  onChange={() => handleSharingChange('anonymousMode')}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Symptoms</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 mb-4">
+              <Input
+                type="text"
+                placeholder="Add a symptom..."
+                className="flex-1 text-black"
+                value={symptomInput}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSymptomInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+              <Button onClick={addSymptom} size="sm">Add</Button>
             </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-gray-800">Share Medical History</h3>
-                <p className="text-sm text-gray-500">Allow doctors to view past conditions</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sharingPreferences.shareMedicalHistory}
-                  onChange={() => handleSharingChange('shareMedicalHistory')}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
+            <div className="space-y-2">
+              {userSymptoms.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No symptoms added yet.</p>
+              ) : (
+                userSymptoms.map((symptom, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-2 bg-muted rounded-md">
+                    <span className="text-black">{symptom}</span>
+                    <Button variant="ghost" size="icon" onClick={() => removeSymptom(symptom)} className="h-6 w-6 text-destructive hover:text-destructive/80">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
             </div>
+          </CardContent>
+        </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Privacy Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-gray-800">Data for Research</h3>
-                <p className="text-sm text-gray-500">Allow anonymous data for medical research</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sharingPreferences.shareForResearch}
-                  onChange={() => handleSharingChange('shareForResearch')}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
+              <Label htmlFor="anonymous-mode" className="flex flex-col space-y-1">
+                <span>Anonymous Mode</span>
+                <span className="font-normal leading-snug text-muted-foreground">
+                  Hide personal information from doctors.
+                </span>
+              </Label>
+              <Switch
+                id="anonymous-mode"
+                checked={sharingPreferences.anonymousMode}
+                onCheckedChange={(checked: boolean) => setSharingPreferences(prev => ({...prev, anonymousMode: checked}))}
+              />
             </div>
-
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-gray-800">Share Biological Sex</h3>
-                <p className="text-sm text-gray-500">Show biological sex to all doctors</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sharingPreferences.shareBiologicalSex}
-                  onChange={() => handleSharingChange('shareBiologicalSex')}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
+               <Label htmlFor="share-history" className="flex flex-col space-y-1">
+                <span>Share Medical History</span>
+                <span className="font-normal leading-snug text-muted-foreground">
+                  Allow doctors to view past conditions.
+                </span>
+              </Label>
+              <Switch
+                id="share-history"
+                checked={sharingPreferences.shareMedicalHistory}
+                onCheckedChange={(checked: boolean) => setSharingPreferences(prev => ({...prev, shareMedicalHistory: checked}))}
+              />
             </div>
-          </div>
-        </div>
+             <div className="flex items-center justify-between">
+               <Label htmlFor="share-research" className="flex flex-col space-y-1">
+                <span>Data for Research</span>
+                <span className="font-normal leading-snug text-muted-foreground">
+                  Allow anonymous data for medical research.
+                </span>
+              </Label>
+              <Switch
+                id="share-research"
+                checked={sharingPreferences.shareForResearch}
+                onCheckedChange={(checked: boolean) => setSharingPreferences(prev => ({...prev, shareForResearch: checked}))}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+               <Label htmlFor="share-sex" className="flex flex-col space-y-1">
+                <span>Share Biological Sex</span>
+                <span className="font-normal leading-snug text-muted-foreground">
+                  Show biological sex to all doctors.
+                </span>
+              </Label>
+              <Switch
+                id="share-sex"
+                checked={sharingPreferences.shareBiologicalSex}
+                onCheckedChange={(checked: boolean) => setSharingPreferences(prev => ({...prev, shareBiologicalSex: checked}))}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Data Access Requests Section */}
         {pendingRequests.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Data Access Requests</h2>
-            <div className="space-y-4">
+          <Card>
+            <CardHeader>
+                <CardTitle>Data Access Requests</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               {pendingRequests.map(request => (
-                <div key={request.id} className="border border-yellow-200 bg-yellow-50 rounded-md p-4">
+                <div key={request.id} className="border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 rounded-md p-4">
                   <div className="flex items-start gap-3 mb-3">
                     <svg
                       className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0"
@@ -299,32 +310,25 @@ export default function PatientDashboard() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      onClick={() => handleDenyRequest(request.id)}
-                      className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      Deny
-                    </button>
-                    <button
-                      onClick={() => handleApproveRequest(request.id)}
-                      className="px-3 py-1 bg-blue-600 rounded text-sm text-white hover:bg-blue-700 transition-colors"
-                    >
-                      Approve
-                    </button>
+                  <div className="flex gap-2 justify-end mt-3">
+                     <Button variant="outline" size="sm" onClick={() => handleDenyRequest(request.id)}>
+                        Deny
+                      </Button>
+                      <Button size="sm" onClick={() => handleApproveRequest(request.id)}>
+                        Approve
+                      </Button>
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 
       {/* Center Column - Chat & Analysis */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Redesigned Chat Interface */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-          <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-sky-50">
+        <Card className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+          <CardHeader className="p-4 border-b flex flex-row items-center justify-between bg-muted/40">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-blue-600">
@@ -339,9 +343,9 @@ export default function PatientDashboard() {
             <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
               AI-Powered
             </span>
-          </div>
+          </CardHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-gray-50 to-white">
+          <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
             {chatMessages.map((message) => (
               <div
                 key={message.id}
@@ -396,309 +400,229 @@ export default function PatientDashboard() {
                 )}
               </div>
             ))}
-          </div>
+          </CardContent>
 
-          <div className="p-4 border-t border-gray-100">
-            <div className="relative">
-              <textarea
+          <CardFooter className="p-4 border-t">
+            <div className="relative w-full">
+              <Textarea
                 placeholder="Type your symptoms and health concerns..."
-                className="w-full p-3 pr-14 border border-gray-300 rounded-lg resize-none h-20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                className="w-full p-3 pr-14 resize-none h-20 text-black"
                 value={symptomsDescription}
-                onChange={(e) => setSymptomsDescription(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSymptomsDescription(e.target.value)}
                 onKeyDown={handleChatKeyDown}
-              ></textarea>
-              <button
+              />
+              <Button
+                size="icon"
                 onClick={sendMessage}
                 disabled={!symptomsDescription.trim()}
-                className={`absolute right-3 bottom-3 p-2 rounded-full transition-colors ${
-                  symptomsDescription.trim()
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
+                className="absolute right-3 bottom-3 h-8 w-8"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                  <path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h6.115a.75.75 0 010 1.5H5.135a1.5 1.5 0 00-1.442 1.086l-1.414 4.926a.75.75 0 00.826.95 28.896 28.896 0 0015.293-7.154.75.75 0 000-1.115A28.897 28.897 0 003.105 2.289z" />
-                </svg>
-              </button>
+                <SendHorizontal className="h-4 w-4" />
+              </Button>
             </div>
-            <p className="text-xs text-gray-500 mt-2">Press Shift+Enter for a new line, Enter to send</p>
-          </div>
-        </div>
+          </CardFooter>
+        </Card>
 
-        {/* AI Analysis */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex justify-between items-start mb-6">
-            <h2 className="text-xl font-semibold text-gray-800">AI Analysis</h2>
+        <Card>
+          <CardHeader className="flex flex-row justify-between items-start">
+            <CardTitle>AI Analysis</CardTitle>
             <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
               Powered by MedLM
             </span>
-          </div>
-
-          {userSymptoms.length === 0 ? (
-            <div className="text-center py-8">
-              <svg
-                className="w-16 h-16 text-gray-300 mx-auto mb-4"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <h3 className="text-lg font-medium text-gray-700">Add symptoms to get started</h3>
-              <p className="text-gray-500 mt-2 max-w-md mx-auto">
-                Our AI will analyze your symptoms and suggest potential conditions while maintaining your privacy.
-              </p>
-            </div>
-          ) : (
-            <div>
-              <p className="mb-4 text-gray-700">
-                Based on your symptoms, here are some potential conditions to discuss with a healthcare provider:
-              </p>
-
-              <div className="space-y-3 mb-6">
-                {matchedConditions.map(condition => (
-                  <div
-                    key={condition.id}
-                    className={`p-3 rounded-md cursor-pointer transition-colors ${
-                      selectedCondition === condition.id
-                        ? 'bg-blue-50 border border-blue-200'
-                        : 'hover:bg-gray-50 border border-gray-100'
-                    }`}
-                    onClick={() => setSelectedCondition(condition.id)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-medium text-gray-800">{condition.name}</h3>
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                        {condition.symptoms.filter(symptom =>
-                          userSymptoms.some(s => s.toLowerCase().includes(symptom.toLowerCase()))
-                        ).length} matching symptoms
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Click to learn more about this condition
-                    </p>
-                  </div>
-                ))}
+          </CardHeader>
+          <CardContent>
+            {userSymptoms.length === 0 ? (
+             <div className="text-center py-8">
+                <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1}/>
+                <h3 className="text-lg font-medium text-gray-700">Add symptoms to get started</h3>
+                <p className="text-gray-500 mt-2 max-w-md mx-auto">
+                  Our AI will analyze your symptoms and suggest potential conditions while maintaining your privacy.
+                </p>
               </div>
+            ) : (
+              <div>
+                <p className="mb-4 text-gray-700">
+                  Based on your symptoms, here are some potential conditions to discuss with a healthcare provider:
+                </p>
 
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                <div className="flex items-start gap-3">
-                  <svg
-                    className="w-6 h-6 text-yellow-500 mt-0.5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <div>
-                    <h4 className="font-medium text-gray-800">Medical Disclaimer</h4>
-                    <p className="text-sm text-gray-600 mt-1">
-                      This is not a diagnosis. Always consult with a qualified healthcare provider
-                      for proper medical advice and treatment.
-                    </p>
+                <div className="space-y-3 mb-6">
+                  {matchedConditions.map(condition => (
+                    <Card
+                     key={condition.id}
+                     className={`mb-3 cursor-pointer transition-colors ${selectedCondition === condition.id ? 'border-primary bg-muted' : 'hover:bg-accent'}`}
+                     onClick={() => setSelectedCondition(condition.id)}
+                   >
+                     <CardContent className="p-3">
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-medium text-gray-800">{condition.name}</h3>
+                          <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                            {condition.symptoms.filter(symptom =>
+                              userSymptoms.some(s => s.toLowerCase().includes(symptom.toLowerCase()))
+                            ).length} matching symptoms
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Click to learn more about this condition
+                        </p>
+                     </CardContent>
+                   </Card>
+                  ))}
+                </div>
+
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="flex items-start gap-3">
+                    <svg
+                      className="w-6 h-6 text-yellow-500 mt-0.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <div>
+                      <h4 className="font-medium text-gray-800">Medical Disclaimer</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        This is not a diagnosis. Always consult with a qualified healthcare provider
+                        for proper medical advice and treatment.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Right Column - Condition Details or Doctor List */}
       <div className="lg:col-span-1 space-y-6">
-        {/* Condition Details or Doctor Search */}
         {selectedCondition !== null ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-            <div className="flex justify-between items-start mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">{currentCondition?.name}</h2>
-              <button
-                onClick={() => setSelectedCondition(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                </svg>
-              </button>
-            </div>
+          <Card>
+            <CardHeader className="flex flex-row justify-between items-start">
+                <CardTitle>{currentCondition?.name}</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedCondition(null)} className="h-6 w-6 text-muted-foreground">
+                    <X className="h-4 w-4" />
+                </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+               <div>
+                 <h3 className="font-medium text-gray-800 mb-3">Common Symptoms</h3>
+                 <ul className="space-y-2">
+                   {currentCondition?.symptoms.map((symptom, idx) => (
+                     <li key={idx} className="flex items-center gap-2 text-sm">
+                       <span
+                         className={
+                           userSymptoms.some(s => s.toLowerCase().includes(symptom.toLowerCase()))
+                             ? "w-2 h-2 bg-green-500 rounded-full"
+                             : "w-2 h-2 bg-gray-300 rounded-full"
+                         }
+                       ></span>
+                       {symptom}
+                       {userSymptoms.some(s => s.toLowerCase().includes(symptom.toLowerCase())) && (
+                         <span className="text-xs text-green-600">(you reported this)</span>
+                       )}
+                     </li>
+                   ))}
+                 </ul>
+               </div>
 
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium text-gray-800 mb-3">Common Symptoms</h3>
-                <ul className="space-y-2">
-                  {currentCondition?.symptoms.map((symptom, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-sm">
-                      <span
-                        className={
-                          userSymptoms.some(s => s.toLowerCase().includes(symptom.toLowerCase()))
-                            ? "w-2 h-2 bg-green-500 rounded-full"
-                            : "w-2 h-2 bg-gray-300 rounded-full"
-                        }
-                      ></span>
-                      {symptom}
-                      {userSymptoms.some(s => s.toLowerCase().includes(symptom.toLowerCase())) && (
-                        <span className="text-xs text-green-600">(you reported this)</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+               <div>
+                 <h3 className="font-medium text-gray-800 mb-3">Common Treatments</h3>
+                 <ul className="space-y-2">
+                   {currentCondition?.commonTreatments.map((treatment, idx) => (
+                     <li key={idx} className="flex items-center gap-2 text-sm">
+                       <svg
+                         className="w-4 h-4 text-blue-500"
+                         xmlns="http://www.w3.org/2000/svg"
+                         viewBox="0 0 20 20"
+                         fill="currentColor"
+                       >
+                         <path
+                           fillRule="evenodd"
+                           d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                           clipRule="evenodd"
+                         />
+                       </svg>
+                       {treatment}
+                     </li>
+                   ))}
+                 </ul>
+               </div>
 
-              <div>
-                <h3 className="font-medium text-gray-800 mb-3">Common Treatments</h3>
-                <ul className="space-y-2">
-                  {currentCondition?.commonTreatments.map((treatment, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-sm">
-                      <svg
-                        className="w-4 h-4 text-blue-500"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      {treatment}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-gray-800 mb-3">Recommended Tests</h3>
-                <div className="flex flex-wrap gap-2">
-                  {currentCondition?.relatedTests.map((test, idx) => (
-                    <span key={idx} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
-                      {test}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <button className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors">
-                Connect with a specialist
-              </button>
-            </div>
-          </div>
+               <div>
+                 <h3 className="font-medium text-gray-800 mb-3">Recommended Tests</h3>
+                 <div className="flex flex-wrap gap-2">
+                   {currentCondition?.relatedTests.map((test, idx) => (
+                     <span key={idx} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
+                       {test}
+                     </span>
+                   ))}
+                 </div>
+               </div>
+            </CardContent>
+            <CardFooter className="mt-6 pt-6 border-t">
+                <Button className="w-full">Connect with a specialist</Button>
+            </CardFooter>
+          </Card>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Find a Specialist</h2>
-
-            <div className="relative mb-6">
-              <input
-                type="text"
-                placeholder="Search specialists..."
-                className="w-full p-3 border border-gray-300 rounded-md pr-10 text-black"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <svg
-                className="absolute right-3 top-3.5 h-5 w-5 text-gray-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-                  clipRule="evenodd"
+          <Card>
+            <CardHeader>
+                <CardTitle>Find a Specialist</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative mb-6">
+                <Input
+                  type="text"
+                  placeholder="Search specialists..."
+                  className="w-full pr-10 text-black"
+                  value={searchQuery}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                 />
-              </svg>
-            </div>
-
-            <div className="space-y-4">
-              {filteredDoctors.map(doctor => (
-                <div key={doctor.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="w-5 h-5"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-800">{doctor.name}</h3>
-                      <p className="text-sm text-gray-500">{doctor.specialty}</p>
-                      <div className="flex items-center mt-1">
-                        <div className="flex">
-                          {Array.from({ length: 5 }).map((_, idx) => (
-                            <svg
-                              key={idx}
-                              className={`w-3 h-3 ${
-                                idx < Math.floor(doctor.rating)
-                                  ? 'text-yellow-400'
-                                  : 'text-gray-300'
-                              }`}
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          ))}
-                        </div>
-                        <span className="text-xs text-gray-500 ml-1">
-                          {doctor.rating}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <div className="text-xs text-gray-500 mb-2">
-                      {doctor.availableSlots} available slots • {doctor.yearsExperience} yrs exp.
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => sendToDoctor(doctor.id)}
-                        disabled={isSendingToDoctor}
-                        className={`flex-1 px-3 py-1.5 rounded-md text-sm text-center ${
-                          isSendingToDoctor
-                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                        }`}
-                      >
-                        {isSendingToDoctor && selectedDoctor === doctor.id
-                          ? 'Sending...'
-                          : 'Send Symptoms'}
-                      </button>
-                      <button className="flex-1 bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 transition-colors text-center">
-                        Book Consult
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+                <Search className="absolute right-3 top-3.5 h-5 w-5 text-gray-400" />
+              </div>
+              <div className="space-y-4">
+                {filteredDoctors.map(doctor => (
+                  <Card key={doctor.id} className="hover:border-primary transition-colors overflow-hidden">
+                    <CardContent className="p-4">
+                       <div className="flex items-center gap-4 mb-3">
+                         <Avatar>
+                            <AvatarFallback>
+                              <User className="h-5 w-5 text-muted-foreground" />
+                            </AvatarFallback>
+                          </Avatar>
+                         <div className="flex-1">
+                           <h3 className="font-medium text-foreground">{doctor.name}</h3>
+                           <p className="text-sm text-muted-foreground">{doctor.specialty}</p>
+                            {renderStars(doctor.rating)}
+                         </div>
+                       </div>
+                       <div className="border-t pt-3">
+                         <div className="text-xs text-muted-foreground mb-2">
+                           {doctor.availableSlots} available slots • {doctor.yearsExperience} yrs exp.
+                         </div>
+                         <div className="flex flex-col space-y-2">
+                           <Button
+                             variant="outline"
+                             onClick={() => sendToDoctor(doctor.id)}
+                             disabled={isSendingToDoctor}
+                             className="flex-1"
+                           >
+                              {isSendingToDoctor && selectedDoctor === doctor.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              {isSendingToDoctor && selectedDoctor === doctor.id ? 'Sending...' : 'Send Symptoms'}
+                           </Button>
+                           <Button className="flex-1">Book Consult</Button>
+                       </div>
+                       </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

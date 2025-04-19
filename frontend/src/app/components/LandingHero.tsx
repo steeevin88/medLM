@@ -1,7 +1,10 @@
 "use client";
 
 import React from 'react';
-// import { useUser } from '../context/UserContext'; // Remove this import
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SignInButton } from "@clerk/nextjs";
+// import { Icons } from '@/components/icons';
 
 export default function LandingHero() {
   // Remove state setting logic - Clerk handles authentication
@@ -23,18 +26,13 @@ export default function LandingHero() {
               Connect anonymously with healthcare providers, get AI-powered insights, and maintain control of your medical data.
             </p>
 
-            {/* Replace buttons with links or info about signing in */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <p className="text-gray-700">Please sign in to access your dashboard.</p>
-              {/* Optionally, add SignInButton here if not present elsewhere on the page */}
-              {/* Example:
-              import { SignInButton } from "@clerk/nextjs";
+            {/* Sign In Info/Button */}
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <p className="text-gray-700 pt-2">Please sign in to access your dashboard.</p>
+              {/* Add SignInButton wrapped in Shadcn Button if desired */}
               <SignInButton mode="modal">
-                <button className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition-colors">
-                  Sign In / Sign Up
-                </button>
+                <Button size="lg">Sign In / Sign Up</Button>
               </SignInButton>
-              */}
             </div>
 
             <div className="mt-8 flex items-center gap-2">
@@ -84,9 +82,10 @@ export default function LandingHero() {
             </div>
           </div>
 
+          {/* AI Assistant Demo Card */}
           <div className="relative">
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center mb-6">
+            <Card className="shadow-lg">
+              <CardHeader className="flex flex-row items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
                   <svg
                     className="w-6 h-6"
@@ -97,12 +96,11 @@ export default function LandingHero() {
                     <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-800 ml-3">AI Health Assistant</h3>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-gray-100 p-3 rounded-lg">
-                  <p className="text-gray-700">I&apos;ve been experiencing headaches and dizziness for the past week.</p>
+                <CardTitle>AI Health Assistant</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted p-3 rounded-lg">
+                  <p className="text-foreground">I&apos;ve been experiencing headaches and dizziness for the past week.</p>
                 </div>
 
                 <div className="bg-blue-100 p-3 rounded-lg">
@@ -124,15 +122,8 @@ export default function LandingHero() {
                     I recommend connecting with a specialist anonymously for further evaluation.
                   </p>
                 </div>
-              </div>
-
-              <div className="mt-6 border-t border-gray-200 pt-4 flex justify-between items-center">
-                <span className="text-sm text-gray-500">Your privacy is guaranteed</span>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
-                  Connect with Doctor
-                </button>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             <div className="hidden md:block absolute -top-6 -right-6 w-24 h-24 bg-yellow-100 rounded-full z-0"></div>
             <div className="hidden md:block absolute -bottom-6 -left-6 w-32 h-32 bg-blue-100 rounded-full z-0"></div>

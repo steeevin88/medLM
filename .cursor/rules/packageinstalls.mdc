@@ -8,3 +8,7 @@ alwaysApply: true
 
 - DO NOT TELL ME TO INSTALL AUTH0 PACKAGES; they're already installed.
 - the next app is in the frontend folder
+- use server components whenever possible
+- use shadcnui for all UI components
+- my package manager is pnpm; use it instead of npm
+- when loading client components, use loading skeletons or React suspense

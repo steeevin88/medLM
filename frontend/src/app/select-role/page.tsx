@@ -3,6 +3,11 @@
 import React, { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from 'lucide-react';
 
 export default function SelectRolePage() {
   const { user, isLoaded } = useUser();
@@ -59,65 +64,65 @@ export default function SelectRolePage() {
   };
 
   if (!isLoaded) {
-    return <div>Loading...</div>; // Or a loading spinner
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-16 flex justify-center items-center min-h-screen">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Select Your Role</h1>
-        <p className="text-gray-600 mb-6 text-center">Please choose how you&apos;ll be using MedLM Connect.</p>
-
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 mb-6">
-            <label
-              htmlFor="doctor"
-              className={`block p-4 border rounded-lg cursor-pointer transition-colors ${selectedRole === 'doctor' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Select Your Role</CardTitle>
+          <CardDescription>Please choose how you&apos;ll be using MedLM Connect.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit}>
+            <RadioGroup
+              value={selectedRole ?? undefined}
+              onValueChange={setSelectedRole}
+              className="space-y-4 mb-6"
             >
-              <input
-                type="radio"
-                id="doctor"
-                name="role"
-                value="doctor"
-                checked={selectedRole === 'doctor'}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                className="mr-2"
-              />
-              <span className="font-medium text-gray-700">I am a Doctor</span>
-              <p className="text-sm text-gray-500 mt-1">Access tools for patient consultations and management.</p>
-            </label>
+              <Label
+                htmlFor="doctor"
+                className={`flex flex-col space-y-1 border rounded-md p-4 cursor-pointer [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-muted`}
+              >
+                <div className="flex items-center space-x-3">
+                  <RadioGroupItem value="doctor" id="doctor" />
+                  <span className="font-medium">I am a Doctor</span>
+                </div>
+                <span className="pl-7 text-sm text-muted-foreground">
+                  Access tools for patient consultations and management.
+                </span>
+              </Label>
 
-            <label
-              htmlFor="patient"
-              className={`block p-4 border rounded-lg cursor-pointer transition-colors ${selectedRole === 'patient' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
+              <Label
+                htmlFor="patient"
+                className={`flex flex-col space-y-1 border rounded-md p-4 cursor-pointer [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-muted`}
+              >
+                <div className="flex items-center space-x-3">
+                  <RadioGroupItem value="patient" id="patient" />
+                  <span className="font-medium">I am a Patient</span>
+                </div>
+                <span className="pl-7 text-sm text-muted-foreground">
+                  Connect with doctors and manage your health information.
+                </span>
+              </Label>
+            </RadioGroup>
+
+            {error && (
+              <p className="text-destructive text-sm mb-4 text-center">{error}</p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={!selectedRole || isLoading}
+              className="w-full"
             >
-              <input
-                type="radio"
-                id="patient"
-                name="role"
-                value="patient"
-                checked={selectedRole === 'patient'}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                className="mr-2"
-              />
-              <span className="font-medium text-gray-700">I am a Patient</span>
-              <p className="text-sm text-gray-500 mt-1">Connect with doctors and manage your health information.</p>
-            </label>
-          </div>
-
-          {error && (
-            <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={!selectedRole || isLoading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Saving...' : 'Confirm Role'}
-          </button>
-        </form>
-      </div>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirm Role
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
