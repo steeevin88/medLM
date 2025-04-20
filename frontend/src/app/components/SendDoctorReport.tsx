@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from "@/components/ui/textarea";
 import { getDoctors } from "@/actions/doctor";
 import { sendDoctorReport } from "@/actions/report";
+import { toast } from "sonner";
 
 type Step = "compose" | "select-doctor";
 
@@ -37,7 +38,7 @@ export default function SendDoctorReport() {
 
   const handleContinue = () => {
     if (!reportBody.trim()) {
-      alert("Please enter a report before continuing");
+      toast.error("Please enter a report before continuing");
       return;
     }
 
@@ -89,12 +90,12 @@ export default function SendDoctorReport() {
         throw new Error(result.error || "Failed to send report");
       }
 
-      alert("Report sent successfully!");
+      toast.success("Report sent successfully!");
       setReportBody("");
       setCurrentStep("compose");
     } catch (error) {
       console.error("Error sending report:", error);
-      alert("There was an error sending your report. Please try again.");
+      toast.error("There was an error sending your report. Please try again.");
     }
   };
 
