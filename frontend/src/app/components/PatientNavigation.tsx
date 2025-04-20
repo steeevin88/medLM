@@ -26,7 +26,6 @@ interface NavigationProps {
   onTabChange: (tab: string) => void;
 }
 
-// Custom Prescription icon since it's not included in lucide-react
 const Prescription = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
@@ -51,33 +50,57 @@ export default function PatientNavigation({ activeTab, onTabChange }: Navigation
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [dataRequests, setDataRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasNewRequests, setHasNewRequests] = useState(false);
+  const previousRequestCountRef = React.useRef(0);
 
   const pendingRequestsCount = dataRequests.filter(req => req.status === 'PENDING').length;
 
-  // Fetch data requests
-  useEffect(() => {
-    const fetchDataRequests = async () => {
-      if (!user?.id) return;
+  const fetchDataRequests = async () => {
+    if (!user?.id) return;
 
-      try {
-        setIsLoading(true);
-        const { dataRequests, error } = await getDataRequestsForPatient(user.id);
+    try {
+      const { dataRequests: newRequests, error } = await getDataRequestsForPatient(user.id);
 
-        if (error) {
-          console.error("Error fetching data requests:", error);
-          return;
+      if (error) {
+        console.error("Error fetching data requests:", error);
+        return;
+      }
+
+      if (newRequests) {
+        const newPendingCount = newRequests.filter(req => req.status === 'PENDING').length;
+
+        if (newPendingCount > previousRequestCountRef.current) {
+          setHasNewRequests(true);
         }
 
-        setDataRequests(dataRequests || []);
-      } catch (error) {
-        console.error("Failed to fetch data requests:", error);
-      } finally {
-        setIsLoading(false);
+        previousRequestCountRef.current = newPendingCount;
+        setDataRequests(newRequests);
       }
-    };
+    } catch (error) {
+      console.error("Failed to fetch data requests:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    setIsLoading(true);
     fetchDataRequests();
   }, [user?.id]);
+
+  useEffect(() => {
+    const pollingInterval = setInterval(() => {
+      fetchDataRequests();
+    }, 5000); // poll every 5 seconds
+
+    return () => clearInterval(pollingInterval);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (isNotificationModalOpen) {
+      setHasNewRequests(false);
+    }
+  }, [isNotificationModalOpen]);
 
   const navigationItems = [
     {
@@ -130,7 +153,6 @@ export default function PatientNavigation({ activeTab, onTabChange }: Navigation
     }
   ];
 
-  // Get user initials for avatar fallback
   const getInitials = () => {
     if (!user) return "?";
     const firstInitial = user.firstName?.[0] || '';
@@ -151,6 +173,7 @@ export default function PatientNavigation({ activeTab, onTabChange }: Navigation
         </div>
         <NotificationBell
           count={pendingRequestsCount}
+          hasNewRequests={hasNewRequests}
           onClick={() => setIsNotificationModalOpen(true)}
         />
       </div>
