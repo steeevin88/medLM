@@ -10,6 +10,7 @@ import MedLMAssistantChat from "../components/MedLMAssistantChat";
 import HealthVitals from "../components/HealthVitals";
 import ActivityExercise from "../components/ActivityExercise";
 import Appointments from "../components/Appointments";
+import PatientPrescriptions from "../components/PatientPrescriptions";
 import { Card, CardContent } from "@/components/ui/card";
 import { handleRoleRedirects } from "@/utils/roles";
 
@@ -36,6 +37,8 @@ export default function PatientPage() {
         return <ActivityExercise />;
       case 'appointments':
         return <Appointments />;
+      case 'prescriptions':
+        return <PatientPrescriptions />;
       case 'settings':
         return (
           <Card className="h-full">
