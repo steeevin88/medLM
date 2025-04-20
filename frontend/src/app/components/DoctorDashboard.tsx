@@ -5,17 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText, AlertCircle } from 'lucide-react';
+import { Search, FileText, AlertCircle, X } from 'lucide-react';
 import { getReportsForDoctor, getReportById, updateReportStatus } from '@/actions/user';
 import ReactMarkdown from 'react-markdown';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@clerk/nextjs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/components/ui/dialog";
 
 // mock data b/c backend is empty rn
 const mockReports = [
   {
     id: '507f1f77bcf86cd799439011',
-    body: "# Patient Report\n\nThe patient has been experiencing **severe headaches** for the past 2 weeks, along with nausea and sensitivity to light.\n\nThey report that pain is worse in the mornings and is not relieved by over-the-counter painkillers.\n\n## Previous Medical History\nNo history of migraines or neurological conditions.",
+    body: "# Patient Report\n\nThe patient has been experiencing **severe headaches** for the past 2 weeks, along with nausea and sensitivity to light.\n\nThey report that pain is worse in the mornings and is not relieved by over-the-counter painkillers.\n\n## Previous Medical History\nNo history of migraines or neurological conditions.\n\n## Current Symptoms\n- Throbbing pain on one side of the head\n- Sensitivity to light and sound\n- Nausea and occasional vomiting\n- Visual disturbances before headache onset\n\n## Current Medications\n- Acetaminophen (ineffective for current symptoms)\n- Multivitamin daily",
     createdAt: new Date(),
     status: 'PENDING',
     obfuscatedUser: {
@@ -30,8 +38,8 @@ const mockReports = [
   },
   {
     id: '507f1f77bcf86cd799439013',
-    body: "# Urgent Review Needed\n\nPatient reports **chest pain** that radiates to the left arm, accompanied by shortness of breath.\n\nThese symptoms began yesterday after physical exertion and have not subsided.\n\n## Vitals\n- BP: 145/95\n- Heart rate: 92 bpm\n- Oxygen saturation: 94%",
-    createdAt: new Date(),
+    body: "# Urgent Review Needed\n\nPatient reports **chest pain** that radiates to the left arm, accompanied by shortness of breath.\n\nThese symptoms began yesterday after physical exertion and have not subsided.\n\n## Vitals\n- BP: 145/95\n- Heart rate: 92 bpm\n- Oxygen saturation: 94%\n\n## Risk Factors\n- Family history of heart disease\n- Sedentary lifestyle\n- Poor diet high in processed foods\n- Recent increase in work stress\n\n## Recent Changes\nPatient reports increased work hours and decreased sleep over the past month.",
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
     status: 'PENDING',
     obfuscatedUser: {
       id: '507f1f77bcf86cd799439014',
@@ -45,8 +53,8 @@ const mockReports = [
   },
   {
     id: '507f1f77bcf86cd799439015',
-    body: "# Follow-up Report\n\nPatient is 2 weeks post-surgery and reports good healing of the incision site.\n\nHowever, they've noticed increased swelling in the evenings and mild pain when walking long distances.\n\n## Current Medications\n- Acetaminophen as needed\n- Daily multivitamin",
-    createdAt: new Date(),
+    body: "# Follow-up Report\n\nPatient is 2 weeks post-surgery and reports good healing of the incision site.\n\nHowever, they've noticed increased swelling in the evenings and mild pain when walking long distances.\n\n## Current Medications\n- Acetaminophen as needed\n- Daily multivitamin\n- Antibiotic course (completed)\n\n## Wound Site\n- No redness or discharge\n- Mild swelling at end of day\n- Sutures intact with good approximation\n\n## Activity Level\nGradually increasing daily steps as tolerated, but experiencing fatigue by evening.",
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
     status: 'PENDING',
     obfuscatedUser: {
       id: '507f1f77bcf86cd799439016',
@@ -57,8 +65,78 @@ const mockReports = [
       healthIssues: [],
       diet: ['REGULAR']
     }
+  },
+  {
+    id: '507f1f77bcf86cd799439017',
+    body: "# Chronic Pain Evaluation\n\nPatient reports **ongoing lower back pain** that has persisted for 8+ months with gradually increasing intensity.\n\nPain is described as dull and constant with occasional sharp flares, particularly after prolonged sitting or standing.\n\n## Pain Management Attempts\n- Physical therapy (minimal relief)\n- Over-the-counter NSAIDs (moderate temporary relief)\n- Heat therapy (some relief)\n- Massage therapy (temporary relief)\n\n## Impact on Daily Life\n- Difficulty sleeping due to pain\n- Reduced ability to exercise\n- Problems sitting at work for extended periods\n- Affecting mood and overall quality of life\n\n## Imaging History\nNo recent imaging studies have been conducted.",
+    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+    status: 'PENDING',
+    obfuscatedUser: {
+      id: '507f1f77bcf86cd799439018',
+      // Intentionally omitted fields
+      age: null, // Omitted age
+      sex: undefined, // Omitted sex
+      activityLevel: 'HIGH',
+      allergies: ['NSAIDS', 'SHELLFISH'],
+      healthIssues: ['ANXIETY', 'HYPERTENSION'],
+      diet: [] // No diet info provided
+    }
+  },
+  {
+    id: '507f1f77bcf86cd799439019',
+    body: "# Skin Condition Consultation\n\nPatient presents with a **persistent rash** on both arms and upper chest that developed approximately 3 weeks ago.\n\nThe rash is described as itchy, red, and slightly raised with small bumps.\n\n## Aggravating Factors\n- Heat and humidity worsen symptoms\n- Certain fabrics (specifically synthetic materials) increase itchiness\n- Stress appears to trigger flare-ups\n\n## Attempted Treatments\n- OTC hydrocortisone cream (minimal effect)\n- Cold compresses (temporary relief from itching)\n- Antihistamines (slight improvement)\n\n## Environmental Changes\n- Recently moved to a new apartment\n- Changed laundry detergent 1 month ago\n- New workplace with different ventilation system\n\n## Previous Dermatological History\nNo previous skin conditions other than occasional mild acne.",
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+    status: 'PENDING',
+    obfuscatedUser: {
+      id: '507f1f77bcf86cd799439020',
+      age: 29,
+      sex: false,
+      activityLevel: null, // Omitted activity level
+      allergies: [], // Empty allergies
+      healthIssues: null, // Omitted health issues
+      diet: null // Omitted diet information
+    }
+  },
+  {
+    id: '507f1f77bcf86cd799439021',
+    body: "# Sleep Disorder Assessment\n\nPatient reports **chronic insomnia** with both sleep initiation and maintenance difficulties for the past 6 months.\n\nTypically takes 1-2 hours to fall asleep and wakes 3-4 times throughout the night, often staying awake for 30+ minutes.\n\n## Sleep Hygiene Assessment\n- Regular sleep/wake schedule attempted but difficult to maintain\n- Bedroom is dark and cool\n- No screen time 1 hour before bed\n- No caffeine after noon\n\n## Daytime Symptoms\n- Excessive daytime fatigue\n- Difficulty concentrating at work\n- Irritability and mood changes\n- Occasional headaches\n\n## Previous Interventions\n- Melatonin supplements (limited effect)\n- Sleep meditation apps (somewhat helpful for initial sleep)\n- White noise machine (helps with staying asleep)\n\n## Relevant Psychosocial Factors\nReports high job stress and recent divorce proceedings contributing to nighttime rumination.",
+    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+    status: 'REVIEWED',
+    obfuscatedUser: {
+      id: '507f1f77bcf86cd799439022',
+      age: null, // Omitted age
+      sex: null, // Omitted sex
+      activityLevel: null, // Omitted activity level
+      allergies: null, // Omitted allergies
+      healthIssues: ['DEPRESSION', 'ANXIETY', 'INSOMNIA'],
+      diet: [] // Empty diet info
+    }
   }
 ];
+
+// OmittedDataField component for consistent rendering
+const OmittedDataField = ({
+  reportId,
+  field,
+  onRequest,
+  status
+}: {
+  reportId: string;
+  field: string;
+  onRequest: (reportId: string, field: string) => void;
+  status: 'PENDING' | 'APPROVED' | 'DENIED' | null;
+}) => (
+  <div className="flex items-center justify-between">
+    <div className="bg-black text-white px-2 py-1 text-xs rounded">DATA OMITTED</div>
+    <button
+      onClick={() => onRequest(reportId, field)}
+      className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded cursor-pointer transition-colors"
+      disabled={status === 'PENDING'}
+    >
+      {status === 'PENDING' ? 'Request Sent' : 'Request Access'}
+    </button>
+  </div>
+);
 
 export default function DoctorDashboard() {
   const { user, isLoaded: isUserLoaded } = useUser();
@@ -68,6 +146,8 @@ export default function DoctorDashboard() {
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [requestedDataAccess, setRequestedDataAccess] = useState<{[key: string]: {[field: string]: boolean}}>({});
+  const [accessRequestStatus, setAccessRequestStatus] = useState<{[key: string]: {[field: string]: 'PENDING' | 'APPROVED' | 'DENIED' | null}}>({});
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadReports() {
@@ -112,6 +192,7 @@ export default function DoctorDashboard() {
   useEffect(() => {
     if (!selectedReportId) {
       setSelectedReport(null);
+      setModalOpen(false);
       return;
     }
 
@@ -122,50 +203,88 @@ export default function DoctorDashboard() {
         const { report, error } = await getReportById(reportId);
 
         if (error || !report) {
-          // Fall back to finding in mock data
           const mockReport = reports.find(r => r.id === reportId);
           setSelectedReport(mockReport || null);
         } else {
           setSelectedReport(report);
         }
+
+        setModalOpen(true);
       } catch (error) {
         console.error("Error loading report:", error);
-        // Fallback to finding in reports array
         const fallbackReport = reports.find(r => r.id === reportId);
         setSelectedReport(fallbackReport || null);
+
+        if (fallbackReport) {
+          setModalOpen(true);
+        }
       }
     }
 
     getReport();
   }, [selectedReportId, reports]);
 
-  // Request access to protected field
   const requestFieldAccess = (reportId: string, field: string) => {
     setRequestedDataAccess(prev => ({
       ...prev,
       [reportId]: { ...(prev[reportId] || {}), [field]: true }
     }));
+
+    setAccessRequestStatus(prev => ({
+      ...prev,
+      [reportId]: { ...(prev[reportId] || {}), [field]: 'PENDING' }
+    }));
+
+    const sendAccessRequest = async () => {
+      try {
+        // TODO: request logic
+        setTimeout(() => {
+          console.log(`Access requested for ${field} in report ${reportId}`);
+        }, 500);
+
+      } catch (error) {
+        console.error("Error requesting access:", error);
+        setAccessRequestStatus(prev => ({
+          ...prev,
+          [reportId]: { ...(prev[reportId] || {}), [field]: null }
+        }));
+      }
+    };
+
+    sendAccessRequest();
   };
 
-  // Determine if a field has access requested
   const hasAccessToField = (reportId: string, field: string) => {
     return requestedDataAccess[reportId]?.[field] || false;
   };
 
-  // Format health issues for display
-  const formatHealthIssues = (issues: string[] | undefined) => {
-    if (!issues || issues.length === 0) return "None reported";
-    return issues.map(issue =>
-      issue.split('_').map(word =>
-        word.charAt(0) + word.slice(1).toLowerCase()
-      ).join(' ')
-    ).join(', ');
+  const getFieldRequestStatus = (reportId: string, field: string) => {
+    return accessRequestStatus[reportId]?.[field] || null;
+  };
+
+  // Check if field is omitted (null, undefined, or empty array)
+  const isFieldOmitted = (value: any) => {
+    return value === null ||
+           value === undefined ||
+           (Array.isArray(value) && value.length === 0);
+  };
+
+  const MarkdownComponents = {
+    h1: (props: any) => <h1 className="text-2xl font-bold my-4" {...props} />,
+    h2: (props: any) => <h2 className="text-xl font-semibold my-3" {...props} />,
+    h3: (props: any) => <h3 className="text-lg font-medium my-2" {...props} />,
+    p: (props: any) => <p className="my-2" {...props} />,
+    ul: (props: any) => <ul className="list-disc pl-5 my-2" {...props} />,
+    ol: (props: any) => <ol className="list-decimal pl-5 my-2" {...props} />,
+    li: (props: any) => <li className="ml-2 my-1" {...props} />,
+    strong: (props: any) => <strong className="font-bold" {...props} />,
+    em: (props: any) => <em className="italic" {...props} />
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+    <div className="mt-6">
       {/* Reports List Card */}
-      <Card className="md:col-span-1 flex flex-col h-[calc(100vh-12rem)]">
+      <Card className="flex flex-col h-[calc(100vh-12rem)]">
         <CardHeader className="p-4">
           <CardTitle className="text-xl mb-2">Anonymous Reports</CardTitle>
           <div className="relative">
@@ -207,8 +326,11 @@ export default function DoctorDashboard() {
                     <div>
                       <h3 className="font-medium mb-1">Report #{report.id}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Patient Age: {report.obfuscatedUser?.age || <Badge variant="outline" className="text-xs">unknown</Badge>}
+                        Patient Age: {report.obfuscatedUser?.age !== null && report.obfuscatedUser?.age !== undefined
+                          ? report.obfuscatedUser.age
+                          : <Badge variant="outline" className="text-xs">omitted</Badge>}
                       </p>
+                      <p className="text-sm text-muted-foreground">Created: {new Date(report.createdAt).toLocaleDateString()}</p>
                     </div>
                     <Badge variant={report.status === 'PENDING' ? 'secondary' : report.status === 'REVIEWED' ? 'outline' : 'default'}>
                       {report.status}
@@ -234,241 +356,232 @@ export default function DoctorDashboard() {
         </CardContent>
       </Card>
 
-      {/* Report Details Area */}
-      <div className="md:col-span-2">
-        {selectedReportId === null ? (
-          <Card className="h-full flex flex-col items-center justify-center p-8">
-            <CardContent className="text-center">
-              <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-foreground">Select a report to view details</h3>
-              <p className="text-muted-foreground mt-2">
-                Patient information is anonymized to protect privacy while providing essential medical context.
-              </p>
-            </CardContent>
-          </Card>
-        ) : !selectedReport ? (
-          <Card className="h-full flex flex-col items-center justify-center p-8">
-            <CardContent className="text-center">
-              <Skeleton className="w-16 h-16 rounded-full mx-auto mb-4" />
-              <Skeleton className="h-6 w-1/2 mx-auto mb-2" />
-              <Skeleton className="h-4 w-2/3 mx-auto" />
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            {/* Report Status Banner */}
-            {selectedReport.status === 'PENDING' && (
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 flex items-center">
-                <AlertCircle className="h-5 w-5 text-yellow-500 mr-3" />
-                <div>
-                  <p className="font-medium text-yellow-700">Pending Review</p>
-                  <p className="text-yellow-600 text-sm">This report requires your attention.</p>
-                </div>
-                <Button
-                  size="sm"
-                  className="ml-auto"
-                  onClick={() => {
-                    if (!selectedReport) return;
-
-                    // Try to update via the API
-                    const updateStatus = async () => {
-                      try {
-                        const { success, report: updatedReport, error } = await updateReportStatus(selectedReport.id, 'REVIEWED');
-
-                        if (success && updatedReport) {
-                          // Update the reports list with the updated report
-                          const updatedReports = reports.map(r =>
-                            r.id === selectedReport.id ? updatedReport : r
-                          );
-                          setReports(updatedReports);
-                          setSelectedReport(updatedReport);
-                        } else {
-                          // Fallback to just updating state locally if API fails
-                          const updatedReports = reports.map(r =>
-                            r.id === selectedReport.id
-                              ? {...r, status: 'REVIEWED'}
-                              : r
-                          );
-                          setReports(updatedReports);
-                          setSelectedReport({...selectedReport, status: 'REVIEWED'});
-                        }
-                      } catch (error) {
-                        console.error("Error updating report status:", error);
-                        // Fallback to local update
-                        const updatedReports = reports.map(r =>
-                          r.id === selectedReport.id
-                            ? {...r, status: 'REVIEWED'}
-                            : r
-                        );
-                        setReports(updatedReports);
-                        setSelectedReport({...selectedReport, status: 'REVIEWED'});
-                      }
-                    };
-
-                    updateStatus();
-                  }}
-                >
-                  Mark as Reviewed
-                </Button>
-              </div>
-            )}
-
-            {/* Patient Overview Card */}
-            <Card>
-              <CardHeader className="p-6">
-                <div className="flex justify-between items-start">
+      {/* Report Details Modal */}
+      <Dialog open={modalOpen} onOpenChange={(open) => {
+        setModalOpen(open);
+        if (!open) setSelectedReportId(null);
+      }}>
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[90vw] md:max-w-[90vw] lg:max-w-[1400px] h-[90vh] p-0 overflow-hidden">
+          {selectedReport && (
+            <>
+              <DialogHeader className="px-6 pt-4 bg-gray-50 border-b sticky top-0 z-10">
+                <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle className="text-2xl mb-2">Report #{selectedReport.id}</CardTitle>
-                    <CardDescription>
-                      Submitted on {new Date(selectedReport.createdAt).toLocaleDateString()} • Status: {selectedReport.status}
-                    </CardDescription>
-                    <div className="flex flex-wrap gap-4 mt-3">
-                      <div className="flex items-center">
-                        <span className="text-gray-600 mr-1">Age:</span>
-                        <span className="font-medium">{selectedReport.obfuscatedUser?.age ?? 'Data protected'}</span>
+                    <DialogTitle className="text-2xl font-semibold">Report #{selectedReport.id}</DialogTitle>
+                    <DialogDescription className="flex items-center gap-3 mt-1">
+                      Submitted on {new Date(selectedReport.createdAt).toLocaleDateString()} •
+                      <Badge variant={selectedReport.status === 'PENDING' ? 'secondary' : 'default'}>
+                        {selectedReport.status}
+                      </Badge>
+
+                      {selectedReport.status === 'PENDING' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="ml-2 hover:cursor-pointer"
+                          onClick={() => {
+                            if (!selectedReport) return;
+
+                            const updateStatus = async () => {
+                              try {
+                                const { success, report: updatedReport, error } = await updateReportStatus(selectedReport.id, 'REVIEWED');
+
+                                if (success && updatedReport) {
+                                  const updatedReports = reports.map(r =>
+                                    r.id === selectedReport.id ? updatedReport : r
+                                  );
+                                  setReports(updatedReports);
+                                  setSelectedReport(updatedReport);
+                                } else {
+                                  const updatedReports = reports.map(r =>
+                                    r.id === selectedReport.id
+                                      ? {...r, status: 'REVIEWED'}
+                                      : r
+                                  );
+                                  setReports(updatedReports);
+                                  setSelectedReport({...selectedReport, status: 'REVIEWED'});
+                                }
+                              } catch (error) {
+                                console.error("Error updating report status:", error);
+                                const updatedReports = reports.map(r =>
+                                  r.id === selectedReport.id
+                                    ? {...r, status: 'REVIEWED'}
+                                    : r
+                                );
+                                setReports(updatedReports);
+                                setSelectedReport({...selectedReport, status: 'REVIEWED'});
+                              }
+                            };
+
+                            updateStatus();
+                          }}
+                        >
+                          Mark as Reviewed
+                        </Button>
+                      )}
+                    </DialogDescription>
+                  </div>
+                  <DialogClose asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </DialogClose>
+                </div>
+              </DialogHeader>
+
+              <div className="overflow-auto h-full pb-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 h-full">
+                  {/* Left side - Report content */}
+                  <div className="p-6 border-r">
+                    <div className="prose prose-slate max-w-none">
+                      <ReactMarkdown components={MarkdownComponents}>
+                        {selectedReport.body}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+
+                  {/* Right side - Patient information */}
+                  <div className="p-6 overflow-y-auto">
+                    <h2 className="text-xl font-semibold mb-4">Patient Information</h2>
+                    <div className="space-y-6">
+                      {/* Demographics Section */}
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-md border-b pb-2">Demographics</h3>
+
+                        <div className="grid grid-cols-2 gap-y-3">
+                          <div>
+                            <span className="text-muted-foreground text-sm">Age:</span>
+                          </div>
+                          <div>
+                            {isFieldOmitted(selectedReport.obfuscatedUser?.age) ? (
+                              <OmittedDataField
+                                reportId={selectedReport.id}
+                                field="age"
+                                onRequest={requestFieldAccess}
+                                status={getFieldRequestStatus(selectedReport.id, 'age')}
+                              />
+                            ) : (
+                              <span className="font-medium">{selectedReport.obfuscatedUser?.age}</span>
+                            )}
+                          </div>
+
+                          <div>
+                            <span className="text-muted-foreground text-sm">Sex:</span>
+                          </div>
+                          <div>
+                            {isFieldOmitted(selectedReport.obfuscatedUser?.sex) ? (
+                              <OmittedDataField
+                                reportId={selectedReport.id}
+                                field="sex"
+                                onRequest={requestFieldAccess}
+                                status={getFieldRequestStatus(selectedReport.id, 'sex')}
+                              />
+                            ) : (
+                              <span className="font-medium">
+                                {selectedReport.obfuscatedUser?.sex === true ? 'Male' :
+                                selectedReport.obfuscatedUser?.sex === false ? 'Female' : 'Other'}
+                              </span>
+                            )}
+                          </div>
+
+                          <div>
+                            <span className="text-muted-foreground text-sm">Activity Level:</span>
+                          </div>
+                          <div>
+                            {isFieldOmitted(selectedReport.obfuscatedUser?.activityLevel) ? (
+                              <OmittedDataField
+                                reportId={selectedReport.id}
+                                field="activityLevel"
+                                onRequest={requestFieldAccess}
+                                status={getFieldRequestStatus(selectedReport.id, 'activityLevel')}
+                              />
+                            ) : (
+                              <span className="font-medium">{selectedReport.obfuscatedUser?.activityLevel}</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center">
-                        <span className="text-gray-600 mr-1">Sex:</span>
-                        {hasAccessToField(selectedReport.id, 'sex') || selectedReport.obfuscatedUser?.sex !== undefined ? (
-                          <span className="font-medium">
-                            {selectedReport.obfuscatedUser?.sex === true ? 'Male' :
-                             selectedReport.obfuscatedUser?.sex === false ? 'Female' : 'Other'}
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => requestFieldAccess(selectedReport.id, 'sex')}
-                            className="text-blue-600 text-sm underline font-normal hover:text-blue-800"
-                          >
-                            Request access
-                          </button>
-                        )}
+
+                      {/* Health Data Section */}
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-md border-b pb-2">Health Profile</h3>
+
+                        <div>
+                          <h4 className="text-sm text-muted-foreground mb-1">Health Issues:</h4>
+                          {isFieldOmitted(selectedReport.obfuscatedUser?.healthIssues) ? (
+                            <OmittedDataField
+                              reportId={selectedReport.id}
+                              field="healthIssues"
+                              onRequest={requestFieldAccess}
+                              status={getFieldRequestStatus(selectedReport.id, 'healthIssues')}
+                            />
+                          ) : (
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                              {selectedReport.obfuscatedUser.healthIssues.map((issue: string, idx: number) => (
+                                <Badge key={idx} variant="outline" className="bg-red-50">
+                                  {issue.replace(/_/g, ' ').toLowerCase()}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          <h4 className="text-sm text-muted-foreground mb-1">Allergies:</h4>
+                          {isFieldOmitted(selectedReport.obfuscatedUser?.allergies) ? (
+                            <OmittedDataField
+                              reportId={selectedReport.id}
+                              field="allergies"
+                              onRequest={requestFieldAccess}
+                              status={getFieldRequestStatus(selectedReport.id, 'allergies')}
+                            />
+                          ) : (
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                              {selectedReport.obfuscatedUser.allergies.map((allergy: string, idx: number) => (
+                                <Badge key={idx} variant="outline" className="bg-amber-50">
+                                  {allergy.replace(/_/g, ' ').toLowerCase()}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          <h4 className="text-sm text-muted-foreground mb-1">Diet Type:</h4>
+                          {isFieldOmitted(selectedReport.obfuscatedUser?.diet) ? (
+                            <OmittedDataField
+                              reportId={selectedReport.id}
+                              field="diet"
+                              onRequest={requestFieldAccess}
+                              status={getFieldRequestStatus(selectedReport.id, 'diet')}
+                            />
+                          ) : (
+                            <div className="flex flex-wrap gap-1.5">
+                              {selectedReport.obfuscatedUser.diet.map((diet: string, idx: number) => (
+                                <Badge key={idx} variant="outline" className="bg-green-50">
+                                  {diet.replace(/_/g, ' ').toLowerCase()}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center">
-                        <span className="text-gray-600 mr-1">Activity Level:</span>
-                        <span className="font-medium">
-                          {selectedReport.obfuscatedUser?.activityLevel ?
-                            selectedReport.obfuscatedUser.activityLevel : 'Data protected'}
-                        </span>
+
+                      {/* Doctor Actions */}
+                      <div className="pt-4 border-t">
+                        <div className="flex justify-end gap-3">
+                          <Button size="sm" variant="outline">
+                            Message Patient
+                          </Button>
+                          <Button size="sm">
+                            Request Consultation
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <Button size="sm">Request Consultation</Button>
                 </div>
-              </CardHeader>
-            </Card>
-
-            {/* Report Content Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Report Content</CardTitle>
-              </CardHeader>
-              <CardContent className="prose prose-slate max-w-none">
-                <ReactMarkdown>{selectedReport.body}</ReactMarkdown>
-              </CardContent>
-            </Card>
-
-            {/* Health Data Cards (Grid) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Health Issues</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!selectedReport.obfuscatedUser?.healthIssues?.length ? (
-                    <p className="text-muted-foreground">No health issues reported.</p>
-                  ) : (
-                    <ul className="space-y-3">
-                      {selectedReport.obfuscatedUser.healthIssues.map((issue: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md">
-                          <svg
-                            className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          <span className="text-gray-800">
-                            {issue.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Allergies</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!selectedReport.obfuscatedUser?.allergies?.length ? (
-                    <p className="text-muted-foreground">No allergies reported.</p>
-                  ) : (
-                    <ul className="space-y-3">
-                      {selectedReport.obfuscatedUser.allergies.map((allergy: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md">
-                          <svg
-                            className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          <span className="text-gray-800">
-                            {allergy.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Diet & Activity Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Lifestyle Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <h5 className="font-medium mb-2">Diet Type</h5>
-                    {selectedReport.obfuscatedUser?.diet?.length ? (
-                      <div className="flex flex-wrap gap-2">
-                        {selectedReport.obfuscatedUser.diet.map((diet: string, idx: number) => (
-                          <Badge key={idx} variant="outline">
-                            {diet.replace(/_/g, ' ').toLowerCase()}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No diet information available</p>
-                    )}
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <h5 className="font-medium mb-2">Activity Level</h5>
-                    <p>
-                      {selectedReport.obfuscatedUser?.activityLevel ?
-                        selectedReport.obfuscatedUser.activityLevel : 'Data protected'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
