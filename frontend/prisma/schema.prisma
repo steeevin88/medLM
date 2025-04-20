@@ -36,11 +36,7 @@ model Patient {
   bloodPressure  String?
 
   // Relations
-  sentReports    Report[]          @relation("PatientReports")
-  appointments   Appointment[]     @relation("PatientAppointments")
-  labTests       LabTest[]         @relation("PatientLabTests")
-  conversations  Conversation[]    @relation("PatientConversations")
-  sentMessages   Message[]         @relation("PatientMessages")
+  sentReports    Report[]  @relation("PatientReports")
 }
 
 model Doctor {
@@ -62,14 +58,11 @@ model Doctor {
   bio            String?
 
   // Relations
-  receivedReports Report[]        @relation("DoctorReports")
-  appointments    Appointment[]   @relation("DoctorAppointments")
-  conversations   Conversation[]  @relation("DoctorConversations")
-  sentMessages    Message[]       @relation("DoctorMessages")
+  receivedReports Report[] @relation("DoctorReports")
 }
 
 model ObfuscatedUser {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  id             String        @id @map("_id")
   userId         String
   age            Int?
   sex            Boolean?
@@ -81,11 +74,6 @@ model ObfuscatedUser {
   // This model is now created for a single report
   report         Report?       @relation(fields: [reportId], references: [id])
   reportId       String?       @unique @db.ObjectId
-  
-  // Anonymous relations
-  conversations  Conversation[] @relation("AnonymousConversations")
-  labTests       LabTest[]      @relation("AnonymousLabTests")
-  appointments   Appointment[]  @relation("AnonymousAppointments")
 }
 
 model Report {
@@ -104,116 +92,6 @@ model Report {
   // Doctor receiving the report
   doctor         Doctor         @relation("DoctorReports", fields: [doctorId], references: [id])
   doctorId       String
-}
-
-model Appointment {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  
-  // Appointment details
-  date           DateTime
-  time           String
-  location       String
-  address        String?
-  notes          String?
-  type           AppointmentType
-  status         AppointmentStatus @default(REQUESTED)
-  isAnonymous    Boolean           @default(false)
-  specialtyType  String?
-  
-  // Relations
-  patient        Patient       @relation("PatientAppointments", fields: [patientId], references: [id])
-  patientId      String
-  
-  doctor         Doctor        @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  doctorId       String
-  
-  // Optional obfuscated user if anonymous
-  obfuscatedUser ObfuscatedUser? @relation("AnonymousAppointments", fields: [obfuscatedUserId], references: [id])
-  obfuscatedUserId String?
-  
-  // Conversation associated with this appointment
-  conversation   Conversation? @relation(fields: [conversationId], references: [id])
-  conversationId String?       @db.ObjectId
-}
-
-model LabTest {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  
-  // Lab test details
-  testName       String
-  date           DateTime
-  time           String
-  location       String
-  address        String?
-  reason         String?
-  status         LabTestStatus @default(SCHEDULED)
-  isAnonymous    Boolean       @default(false)
-  results        String?
-  
-  // Relations
-  patient        Patient       @relation("PatientLabTests", fields: [patientId], references: [id])
-  patientId      String
-  
-  orderedBy      String        // Name of doctor who ordered the test
-  
-  // Optional obfuscated user if anonymous
-  obfuscatedUser ObfuscatedUser? @relation("AnonymousLabTests", fields: [obfuscatedUserId], references: [id])
-  obfuscatedUserId String?
-}
-
-model Conversation {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  
-  // Conversation details
-  title          String?
-  isAnonymous    Boolean       @default(false)
-  
-  // Relations
-  patient        Patient       @relation("PatientConversations", fields: [patientId], references: [id])
-  patientId      String
-  
-  doctor         Doctor        @relation("DoctorConversations", fields: [doctorId], references: [id])
-  doctorId       String
-  
-  // Optional obfuscated user if anonymous
-  obfuscatedUser ObfuscatedUser? @relation("AnonymousConversations", fields: [obfuscatedUserId], references: [id])
-  obfuscatedUserId String?
-  
-  // Messages in this conversation
-  messages       Message[]
-  
-  // Related appointment (if any)
-  appointments   Appointment[]
-}
-
-model Message {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt      DateTime      @default(now())
-  
-  // Message content
-  content        String
-  isRead         Boolean       @default(false)
-  
-  // Who sent the message
-  sentByPatient  Boolean       @default(false)
-  sentByDoctor   Boolean       @default(false)
-  
-  // Relations
-  patient        Patient?      @relation("PatientMessages", fields: [patientId], references: [id])
-  patientId      String?
-  
-  doctor         Doctor?       @relation("DoctorMessages", fields: [doctorId], references: [id])
-  doctorId       String?
-  
-  // Conversation this message belongs to
-  conversation   Conversation  @relation(fields: [conversationId], references: [id])
-  conversationId String        @db.ObjectId
 }
 
 enum ActivityLevel {
@@ -270,25 +148,4 @@ enum ReportStatus {
   PENDING
   REVIEWED
   RESPONDED
-}
-
-enum AppointmentType {
-  IN_PERSON
-  VIDEO
-  PHONE
-}
-
-enum AppointmentStatus {
-  REQUESTED
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-  RESCHEDULED
-}
-
-enum LabTestStatus {
-  SCHEDULED
-  COMPLETED
-  CANCELLED
-  RESULTS_READY
 }
