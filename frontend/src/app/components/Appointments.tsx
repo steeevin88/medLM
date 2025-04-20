@@ -4,25 +4,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, Clock, User, Phone, Video, MapPin, AlertCircle, Plus, Calendar, FlaskConical, Stethoscope, MessageSquare, ArrowLeft, Send } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Phone, Video, MapPin, AlertCircle, Plus, Calendar, FlaskConical, Stethoscope, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@clerk/nextjs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-
-// Define chat message type
-interface ChatMessage {
-  id: number;
-  sender: 'doctor' | 'patient' | 'ai';
-  senderName: string;
-  message: string;
-  timestamp: string;
-}
+import ChatInterface, { ChatMessage } from "./ChatInterface";
 
 export default function Appointments() {
   const { user } = useUser();
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
-  const [newMessage, setNewMessage] = useState('');
   const [chatHistories, setChatHistories] = useState<Record<number, ChatMessage[]>>({
     1: [
       { id: 1, sender: 'doctor', senderName: 'Dr. Sarah Johnson', message: 'Hello! How are you feeling today?', timestamp: '10:30 AM' },
@@ -189,23 +178,63 @@ export default function Appointments() {
 
   const [activeTab, setActiveTab] = useState('current');
 
-  // Add a ref for the scroll area
-  const scrollAreaRef = React.useRef<HTMLDivElement>(null);
-
-  // Function to scroll to bottom of messages
-  const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current;
-      scrollContainer.scrollTop = scrollContainer.scrollHeight;
-    }
+  // Helper to get current time in 12-hour format
+  const getCurrentTime = () => {
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // Convert 0 to 12
+    return `${hours}:${minutes} ${ampm}`;
   };
 
-  // Effect to scroll to bottom when messages change
-  React.useEffect(() => {
-    if (selectedChat) {
-      setTimeout(scrollToBottom, 100); // Small delay to ensure DOM is updated
-    }
-  }, [chatHistories, selectedChat]);
+  const handleSendMessage = (message: string) => {
+    if (!selectedChat) return;
+    
+    // Add the new message to chat history
+    setChatHistories(prev => {
+      const currentChat = prev[selectedChat] || [];
+      const newId = currentChat.length > 0 ? Math.max(...currentChat.map(msg => msg.id)) + 1 : 1;
+      
+      // Create new message with proper types
+      const newMsg: ChatMessage = {
+        id: newId,
+        sender: 'patient',
+        senderName: user?.fullName || 'Patient',
+        message: message,
+        timestamp: getCurrentTime()
+      };
+      
+      const updatedChat = [...currentChat, newMsg];
+      
+      // Simulate AI response after a short delay if it's a current appointment
+      if (!isPastAppointment(selectedChat)) {
+        setTimeout(() => {
+          const aiResponseId = updatedChat.length > 0 ? Math.max(...updatedChat.map(msg => msg.id)) + 1 : 1;
+          
+          // Create AI response with proper types
+          const aiResponse: ChatMessage = {
+            id: aiResponseId,
+            sender: 'ai',
+            senderName: 'MedAI',
+            message: "I've noted your message and will notify the doctor. Is there anything else you'd like to add?",
+            timestamp: getCurrentTime()
+          };
+          
+          setChatHistories(prevChats => ({
+            ...prevChats,
+            [selectedChat]: [...prevChats[selectedChat], aiResponse]
+          }));
+        }, 1000);
+      }
+      
+      return {
+        ...prev,
+        [selectedChat]: updatedChat
+      };
+    });
+  };
 
   const getAppointmentTypeIcon = (type: string) => {
     switch(type) {
@@ -244,97 +273,6 @@ export default function Appointments() {
     }
   };
 
-  // Helper to get current time in 12-hour format
-  const getCurrentTime = () => {
-    const now = new Date();
-    let hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; // Convert 0 to 12
-    return `${hours}:${minutes} ${ampm}`;
-  };
-
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !selectedChat) return;
-    
-    // Add the new message to chat history
-    setChatHistories(prev => {
-      const currentChat = prev[selectedChat] || [];
-      const newId = currentChat.length > 0 ? Math.max(...currentChat.map(msg => msg.id)) + 1 : 1;
-      
-      // Create new message with proper types
-      const newMsg: ChatMessage = {
-        id: newId,
-        sender: 'patient',
-        senderName: user?.fullName || 'Patient',
-        message: newMessage,
-        timestamp: getCurrentTime()
-      };
-      
-      const updatedChat = [...currentChat, newMsg];
-      
-      // Simulate AI response after a short delay if it's a current appointment
-      if (!isPastAppointment(selectedChat)) {
-        setTimeout(() => {
-          const aiResponseId = updatedChat.length > 0 ? Math.max(...updatedChat.map(msg => msg.id)) + 1 : 1;
-          
-          // Create AI response with proper types
-          const aiResponse: ChatMessage = {
-            id: aiResponseId,
-            sender: 'ai',
-            senderName: 'MedAI',
-            message: "I've noted your message and will notify the doctor. Is there anything else you'd like to add?",
-            timestamp: getCurrentTime()
-          };
-          
-          setChatHistories(prevChats => ({
-            ...prevChats,
-            [selectedChat]: [...prevChats[selectedChat], aiResponse]
-          }));
-        }, 1000);
-      }
-      
-      return {
-        ...prev,
-        [selectedChat]: updatedChat
-      };
-    });
-    
-    // Clear the input
-    setNewMessage('');
-  };
-
-  const getSenderAvatar = (sender: string, name: string) => {
-    switch(sender) {
-      case 'doctor':
-        return (
-          <Avatar>
-            <AvatarFallback className="bg-blue-100 text-blue-800">{name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-          </Avatar>
-        );
-      case 'patient':
-        return (
-          <Avatar>
-            <AvatarImage src={user?.imageUrl ?? ''} alt={name} />
-            <AvatarFallback className="bg-gray-100 text-gray-800">{name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-          </Avatar>
-        );
-      case 'ai':
-        return (
-          <Avatar>
-            <AvatarFallback className="bg-purple-100 text-purple-800">AI</AvatarFallback>
-          </Avatar>
-        );
-      default:
-        return (
-          <Avatar>
-            <AvatarFallback>?</AvatarFallback>
-          </Avatar>
-        );
-    }
-  };
-
   // Get the current appointment being viewed in chat
   const getCurrentAppointment = () => {
     if (!selectedChat) return null;
@@ -353,103 +291,36 @@ export default function Appointments() {
     return appointments.past.some(a => a.id === appointmentId);
   };
 
+  // Get user initials for avatar fallback
+  const getUserInitials = () => {
+    if (!user) return "?";
+    const firstInitial = user.firstName?.[0] || '';
+    const lastInitial = user.lastName?.[0] || '';
+    return firstInitial + lastInitial || user.username?.[0] || "?";
+  };
+
   if (selectedChat) {
     const currentAppointment = getCurrentAppointment();
-    const chatMessages = chatHistories[selectedChat] || [];
     const isPast = isPastAppointment(selectedChat);
     
     return (
-      <Card className="h-full flex flex-col">
-        <CardHeader className="pb-3 border-b flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setSelectedChat(null)}
-              className="gap-1"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to appointments
-            </Button>
-            <div className="flex items-center gap-2">
-              {currentAppointment && (
-                <>
-                  <span className="font-medium">{currentAppointment.doctorName}</span>
-                  <Badge variant="outline">{currentAppointment.specialty}</Badge>
-                  {isPast && (
-                    <Badge variant="secondary">Past Appointment</Badge>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <div className="flex-1 overflow-hidden flex flex-col">
-          <div 
-            ref={scrollAreaRef} 
-            className="flex-1 px-4 py-2 overflow-y-auto"
-          >
-            <div className="space-y-4 pb-4">
-              {chatMessages.map((msg) => (
-                <div 
-                  key={msg.id} 
-                  className={`flex gap-3 ${msg.sender === 'patient' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {msg.sender !== 'patient' && (
-                    <div className="flex-shrink-0">
-                      {getSenderAvatar(msg.sender, msg.senderName)}
-                    </div>
-                  )}
-                  <div className={`flex flex-col max-w-[75%] ${msg.sender === 'patient' ? 'items-end' : 'items-start'}`}>
-                    <div className={`flex items-center gap-2 ${msg.sender === 'patient' ? 'flex-row-reverse' : 'flex-row'}`}>
-                      <span className="font-medium text-sm">{msg.senderName}</span>
-                      <span className="text-xs text-gray-500">{msg.timestamp}</span>
-                    </div>
-                    <div className={`rounded-lg p-3 mt-1 ${
-                      msg.sender === 'doctor' ? 'bg-blue-50 rounded-tl-none' :
-                      msg.sender === 'ai' ? 'bg-purple-50 rounded-tl-none' : 
-                      'bg-blue-500 text-white rounded-tr-none'
-                    }`}>
-                      {msg.message}
-                    </div>
-                  </div>
-                  {msg.sender === 'patient' && (
-                    <div className="flex-shrink-0">
-                      {getSenderAvatar(msg.sender, msg.senderName)}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {!isPast && (
-            <div className="p-4 border-t bg-white flex-shrink-0">
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="Type a message..." 
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="flex-1"
-                />
-                <Button onClick={handleSendMessage} className="gap-1">
-                  <Send className="h-4 w-4" />
-                  Send
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          {isPast && (
-            <div className="p-4 border-t bg-gray-50 flex-shrink-0">
-              <p className="text-sm text-gray-500 text-center">
-                This is a past appointment. You cannot send new messages.
-              </p>
-            </div>
-          )}
-        </div>
-      </Card>
+      <ChatInterface 
+        chatId={selectedChat}
+        messages={chatHistories[selectedChat] || []}
+        onSendMessage={handleSendMessage}
+        onBack={() => setSelectedChat(null)}
+        isReadOnly={isPast}
+        headerInfo={currentAppointment ? {
+          title: currentAppointment.doctorName,
+          subtitle: currentAppointment.specialty,
+          badges: isPast ? [{text: "Past Appointment", variant: "secondary"}] : undefined
+        } : undefined}
+        userInfo={{
+          imageUrl: user?.imageUrl || "/avatar-placeholder.png",
+          fullName: user?.fullName || user?.username || "User",
+          initials: getUserInitials()
+        }}
+      />
     );
   }
 
