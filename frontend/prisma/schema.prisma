@@ -37,6 +37,7 @@ model Patient {
 
   // Relations
   sentReports    Report[]  @relation("PatientReports")
+  prescriptions  Prescription[] @relation("PatientPrescriptions")
 }
 
 model Doctor {
@@ -59,6 +60,38 @@ model Doctor {
 
   // Relations
   receivedReports Report[] @relation("DoctorReports")
+  prescribedMedications Prescription[] @relation("DoctorPrescriptions")
+}
+
+model Prescription {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  brand          String?
+  dosage         String
+  frequency      String
+  instructions   String?
+  dateIssued     DateTime
+  endDate        DateTime
+  refillsRemaining Int        @default(0)
+  status         PrescriptionStatus
+  type           PrescriptionType
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  // Comparison data
+  avgDosage      String?
+  isBelow        Boolean?
+  comparisonNotes String?
+  
+  // Warnings as an array of strings
+  warnings       String[]
+  
+  // Relations
+  patient        Patient      @relation("PatientPrescriptions", fields: [patientId], references: [id])
+  patientId      String
+  
+  prescribedBy   Doctor       @relation("DoctorPrescriptions", fields: [doctorId], references: [id])
+  doctorId       String
 }
 
 model ObfuscatedUser {
@@ -149,3 +182,22 @@ enum ReportStatus {
   REVIEWED
   RESPONDED
 }
+
+enum PrescriptionStatus {
+  ACTIVE
+  EXPIRED
+  PENDING
+  CANCELLED
+}
+
+enum PrescriptionType {
+  PAIN
+  ANTIBIOTIC
+  ANTIDEPRESSANT
+  BLOOD_PRESSURE
+  DIABETES
+  ALLERGY
+  CHOLESTEROL
+  OTHER
+}
+
