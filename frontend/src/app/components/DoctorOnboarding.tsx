@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { createDoctor } from "@/actions/user";
+import { createDoctor } from "@/actions/doctor";
 
 const formSchema = z.object({
   sex: z.enum(["male", "female", "other"]),

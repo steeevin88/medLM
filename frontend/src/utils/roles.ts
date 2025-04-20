@@ -1,8 +1,5 @@
-// i think we need to make API routes for each one idk
-// im assuming this is caused by the same reason why we can't use db/actions in middleware.ts too
-// maybe we can look at our old repos + see how we did it
-
-import { getDoctorData, getPatientData } from "@/actions/user";
+import { getPatientData } from "@/actions/user";
+import { getDoctorData } from "@/actions/doctor";
 import { useUser } from "@clerk/nextjs";
 
 export type Role = "patient" | "doctor";
@@ -29,10 +26,6 @@ export const handleRoleRedirects = async (
       router.push("/select-role");
       return true;
     }
-
-    console.log(
-      `role; ${user.publicMetadata.role}; ${await getPatientData(user.id)}`
-    );
 
     if (
       (user.publicMetadata.role === "patient" &&
