@@ -2,6 +2,21 @@
 
 import prisma from "../lib/db";
 
+export type DoctorData = {
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  sex: boolean;
+  age: number;
+  location: string;
+  fieldOfStudy: string;
+  specialization?: string | null;
+  yearsExperience?: number | null;
+  licenseNumber?: string | null;
+  hospital?: string | null;
+  bio?: string | null;
+};
+
 export async function uploadPatientData(patient: any) {
   return await prisma.patient.create({
     data: patient,
@@ -131,5 +146,21 @@ export async function updateReportStatus(reportId: string, status: 'PENDING' | '
   } catch (error) {
     console.error("Error updating report status:", error);
     return { success: false, report: null, error: "Failed to update report status" };
+  }
+}
+
+export async function createDoctor(userId: string, doctorData: DoctorData) {
+  try {
+    const newDoctor = await prisma.doctor.create({
+      data: {
+        id: userId, // clerk id is used as mongo id
+        ...doctorData,
+      },
+    });
+
+    return { success: true, doctor: newDoctor, error: null };
+  } catch (error) {
+    console.error("Error creating doctor profile:", error);
+    return { success: false, doctor: null, error: "Failed to create doctor profile" };
   }
 }

@@ -10,5 +10,5 @@ alwaysApply: true
 - the next app is in the frontend folder
 - use server components whenever possible
 - use shadcnui for all UI components
-- my package manager is pnpm; use it instead of npm
+- my package manager is npm
 - when loading client components, use loading skeletons or React suspense
