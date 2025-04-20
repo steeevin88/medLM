@@ -36,68 +36,70 @@ model Patient {
   bloodPressure  String?
 
   // Relations
-  sentReports    Report[]  @relation("PatientReports")
+  sentReports Report[] @relation("PatientReports")
 }
 
 model Doctor {
-  id             String   @id @map("_id")
-  firstName      String?
-  lastName       String?
-  email          String?  @unique
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id        String   @id @map("_id")
+  firstName String?
+  lastName  String?
+  email     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  sex            Boolean
-  age            Int
-  location       String
-  fieldOfStudy   String
-  specialization String?
+  sex             Boolean
+  age             Int
+  location        String
+  fieldOfStudy    String
+  specialization  String?
   yearsExperience Int?
-  licenseNumber  String?
-  hospital       String?
-  bio            String?
+  licenseNumber   String?
+  hospital        String?
+  bio             String?
 
   // Relations
   receivedReports Report[] @relation("DoctorReports")
 }
 
 model ObfuscatedUser {
-  id             String        @id @map("_id")
-  userId         String
-  age            Int?
-  sex            Boolean?
-  activityLevel  ActivityLevel?
-  allergies      Allergy[]
-  healthIssues   HealthIssue[]
-  diet           Diet[]
+  id            String         @id @map("_id")
+  userId        String
+  age           Int?
+  sex           Boolean?
+  activityLevel ActivityLevel?
+  allergies     Allergy[]
+  healthIssues  HealthIssue[]
+  diet          Diet[]
 
   // This model is now created for a single report
-  report         Report?       @relation(fields: [reportId], references: [id])
-  reportId       String?       @unique @db.ObjectId
+  report   Report? @relation(fields: [reportId], references: [id])
+  reportId String? @unique @db.ObjectId
 }
 
 model Report {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  body           String
-  createdAt      DateTime      @default(now())
-  status         ReportStatus  @default(PENDING)
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  body      String
+  createdAt DateTime     @default(now())
+  status    ReportStatus @default(PENDING)
 
   // Patient (anonymized) - now a one-to-one relation
   obfuscatedUser ObfuscatedUser?
 
   // Original patient (for internal reference)
-  patient        Patient        @relation("PatientReports", fields: [patientId], references: [id])
-  patientId      String
+  patient   Patient @relation("PatientReports", fields: [patientId], references: [id])
+  patientId String
 
   // Doctor receiving the report
-  doctor         Doctor         @relation("DoctorReports", fields: [doctorId], references: [id])
-  doctorId       String
+  doctor   Doctor @relation("DoctorReports", fields: [doctorId], references: [id])
+  doctorId String
 }
 
 enum ActivityLevel {
-  LOW
-  MEDIUM
-  HIGH
+  SEDENTARY
+  LIGHT
+  MODERATE
+  ACTIVE
+  VERYACTIVE
 }
 
 enum Allergy {
@@ -115,10 +117,12 @@ enum Allergy {
 }
 
 enum Medication {
-  ASPIRIN
-  IBUPROFEN
+  PAIN_KILLERS
+  ANTIHISTAMINES
+  ANTIDEPRESSANTS
   ANTIBIOTICS
   BLOOD_PRESSURE_MEDICATION
+  BLOOD_THINNERS
   INSULIN
   OTHER
 }
@@ -133,15 +137,13 @@ enum HealthIssue {
 }
 
 enum Diet {
-  VEGETARIAN
   VEGAN
-  KETO
-  PALEO
+  VEGETARIAN
   MEDITERRANEAN
   GLUTEN_FREE
   DAIRY_FREE
   LOW_CARB
-  OTHER
+  REGULAR
 }
 
 enum ReportStatus {

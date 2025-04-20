@@ -33,172 +33,61 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createPatient } from "@/actions/user";
-import {
-  ActivityLevel,
-  Allergy,
-  Diet,
-  Medication,
-  Patient,
-} from "@prisma/client";
+import { ActivityLevel, Allergy, Diet, Medication } from "@prisma/client";
 import { useUser } from "@clerk/nextjs";
 
-const ALLERGIES = [
-  { id: "peanuts", label: "Peanuts" },
-  { id: "shellfish", label: "Shellfish" },
-  { id: "dairy", label: "Dairy" },
-  { id: "gluten", label: "Gluten" },
-  { id: "eggs", label: "Eggs" },
-  { id: "soy", label: "Soy" },
-  { id: "medication", label: "Medication Allergies" },
-] as const;
+// Use schema enums for form constants
+const ALLERGIES = Object.values(Allergy).map((allergy) => ({
+  id: allergy.toLowerCase(),
+  label: allergy
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase()),
+}));
 
-const MEDICATIONS = [
-  { id: "antibiotics", label: "Antibiotics" },
-  { id: "antihistamines", label: "Antihistamines" },
-  { id: "antidepressants", label: "Antidepressants" },
-  { id: "painkillers", label: "Painkillers" },
-  { id: "bloodpressure", label: "Blood Pressure Medication" },
-  { id: "diabetes", label: "Diabetes Medication" },
-  { id: "other", label: "Other" },
-] as const;
+const MEDICATIONS = Object.values(Medication).map((medication) => ({
+  id: medication.toLowerCase(),
+  label: medication
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase()),
+}));
 
-const DIETS = [
-  { value: "regular", label: "Regular Diet" },
-  { value: "vegetarian", label: "Vegetarian" },
-  { value: "vegan", label: "Vegan" },
-  { value: "keto", label: "Keto" },
-  { value: "lowcarb", label: "Low-Carb" },
-  { value: "glutenfree", label: "Gluten-Free" },
-  { value: "dairyfree", label: "Dairy-Free" },
-] as const;
+const DIETS = Object.values(Diet).map((diet) => ({
+  value: diet.toLowerCase(),
+  label: diet
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase()),
+}));
 
-const ACTIVITY_LEVELS = [
-  { value: "sedentary", label: "Sedentary" },
-  { value: "light", label: "Light Exercise (1-2 days/week)" },
-  { value: "moderate", label: "Moderate Exercise (3-5 days/week)" },
-  { value: "active", label: "Active (6-7 days/week)" },
-  { value: "veryactive", label: "Very Active (multiple times/day)" },
-] as const;
+const ACTIVITY_LEVELS = Object.values(ActivityLevel).map((level) => ({
+  value: level,
+  label: level
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase()),
+}));
 
-// Create a schema for form validation
 const formSchema = z.object({
-  sex: z.enum(["male", "female", "other"]),
+  sex: z.boolean().default(true),
   age: z.coerce.number().int().positive().max(120),
   height: z.coerce.number().positive(),
   weight: z.coerce.number().positive(),
-  allergies: z.array(z.string()).optional(),
-  medications: z.array(z.string()).optional(),
+  allergies: z.array(z.nativeEnum(Allergy)).optional(),
+  medications: z.array(z.nativeEnum(Medication)).optional(),
   medicalHistory: z.array(z.string()).optional(),
   additionalMedicalHistory: z.string().optional(),
-  diet: z.enum([
-    "regular",
-    "vegetarian",
-    "vegan",
-    "keto",
-    "lowcarb",
-    "glutenfree",
-    "dairyfree",
-  ]),
-  activityLevel: z.enum([
-    "sedentary",
-    "light",
-    "moderate",
-    "active",
-    "veryactive",
-  ]),
+  diet: z.nativeEnum(Diet),
+  activityLevel: z.nativeEnum(ActivityLevel),
   additionalInfo: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof formSchema>;
 
-function mapActivityLevel(level: string): ActivityLevel {
-  switch (level) {
-    case "sedentary":
-      return "LOW";
-    case "light":
-    case "moderate":
-      return "MEDIUM";
-    case "active":
-    case "veryactive":
-      return "HIGH";
-    default:
-      return "LOW";
-  }
-}
-
-function mapDiet(diet: string): Diet {
-  switch (diet) {
-    case "vegetarian":
-      return "VEGETARIAN";
-    case "vegan":
-      return "VEGAN";
-    case "keto":
-      return "KETO";
-    case "lowcarb":
-      return "LOW_CARB";
-    case "glutenfree":
-      return "GLUTEN_FREE";
-    case "dairyfree":
-      return "DAIRY_FREE";
-    default:
-      return "OTHER";
-  }
-}
-
-function mapAllergies(allergies: string[]): Allergy[] {
-  return [...allergies].map((allergy) => {
-    switch (allergy) {
-      case "dairy":
-        return Allergy.DAIRY;
-      case "eggs":
-        return Allergy.EGGS;
-      case "gluten":
-        return Allergy.GLUTEN;
-      case "lactose":
-        return Allergy.LACTOSE;
-      case "latex":
-        return Allergy.LATEX;
-      case "nuts":
-        return Allergy.NUTS;
-      case "peanuts":
-        return Allergy.PEANUTS;
-      case "pollen":
-        return Allergy.POLLEN;
-      case "seafood":
-        return Allergy.SEAFOOD;
-      case "soy":
-        return Allergy.SOY;
-      default:
-        return Allergy.OTHER;
-    }
-  });
-}
-
-function mapMedications(medications: string[]): Medication[] {
-  return [...medications].map((medication) => {
-    switch (medication) {
-      case "antibiotics":
-        return Medication.ANTIBIOTICS;
-      case "antihistamines":
-        return Medication.ANTIBIOTICS;
-      case "antidepressants":
-        return Medication.OTHER;
-      case "painkillers":
-        return Medication.IBUPROFEN;
-      case "bloodpressure":
-        return Medication.BLOOD_PRESSURE_MEDICATION;
-      case "diabetes":
-        return Medication.INSULIN;
-      case "other":
-      default:
-        return Medication.OTHER;
-    }
-  });
-}
-
 export default function PatientOnboarding() {
   const defaultValues: Partial<ProfileFormValues> = {
-    sex: "male",
+    sex: true,
     age: undefined,
     height: undefined,
     weight: undefined,
@@ -206,8 +95,8 @@ export default function PatientOnboarding() {
     medications: [],
     medicalHistory: [],
     additionalMedicalHistory: "",
-    diet: "regular",
-    activityLevel: "moderate",
+    diet: Diet.REGULAR,
+    activityLevel: ActivityLevel.MODERATE,
     additionalInfo: "",
   };
   const { user, isLoaded } = useUser();
@@ -220,14 +109,14 @@ export default function PatientOnboarding() {
     if (!isLoaded || !user) return;
 
     const patientData = {
-      sex: data.sex === "male",
+      sex: data.sex,
       age: data.age,
       height: data.height,
       weight: data.weight,
-      activityLevel: mapActivityLevel(data.activityLevel),
-      allergies: mapAllergies(data.allergies ?? []),
-      medications: mapMedications(data.medications ?? []),
-      diet: [mapDiet(data.diet)],
+      activityLevel: data.activityLevel,
+      allergies: data.allergies ?? [],
+      medications: data.medications ?? [],
+      diet: [data.diet],
       additionalInfo: data.additionalInfo,
       firstName: user.firstName ?? null,
       lastName: user.lastName ?? null,
@@ -286,12 +175,6 @@ export default function PatientOnboarding() {
                             <RadioGroupItem value="female" />
                           </FormControl>
                           <FormLabel className="font-normal">Female</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="other" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Other</FormLabel>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
