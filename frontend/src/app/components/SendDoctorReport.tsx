@@ -21,6 +21,19 @@ interface Doctor {
 export default function SendDoctorReport() {
   const [reportBody, setReportBody] = useState("");
   const [currentStep, setCurrentStep] = useState<Step>("compose");
+  const [draftLoaded, setDraftLoaded] = useState(false);
+
+  // Check for a draft report in localStorage when component mounts
+  useEffect(() => {
+    if (!draftLoaded && typeof window !== 'undefined') {
+      const draftReport = localStorage.getItem('medlm_report_draft');
+      if (draftReport) {
+        setReportBody(draftReport);
+        localStorage.removeItem('medlm_report_draft'); // Remove after loading
+      }
+      setDraftLoaded(true);
+    }
+  }, [draftLoaded]);
 
   const handleContinue = () => {
     if (!reportBody.trim()) {
@@ -36,7 +49,9 @@ export default function SendDoctorReport() {
       <CardHeader>
         <CardTitle>Send Doctor Report</CardTitle>
         <CardDescription>
-          Compose a detailed report to send to your doctor. You can use Markdown formatting.
+          {draftLoaded && reportBody ?
+            "I've prepared a report based on our conversation. You can edit it before sending to a doctor." :
+            "Compose a detailed report to send to your doctor. You can use Markdown formatting."}
         </CardDescription>
       </CardHeader>
       <CardContent>

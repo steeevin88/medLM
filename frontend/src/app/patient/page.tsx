@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import PatientNavigation from "../components/PatientNavigation";
 import PatientOnboarding from "../components/PatientOnboarding";
@@ -18,11 +18,34 @@ import { handleRoleRedirects } from "@/utils/roles";
 export default function PatientPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState('chat');
+
+  useEffect(() => {
+    // Set active tab based on URL parameter if present
+    if (tabParam && ['chat', 'profile', 'documents', 'vitals', 'activity',
+                      'appointments', 'prescriptions', 'doctor-report', 'settings'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   useEffect(() => {
     handleRoleRedirects(user, isLoaded, 'patient', router);
   }, [isLoaded, user, router]);
+
+  // Update URL when active tab changes
+  useEffect(() => {
+    if (activeTab !== 'chat') {
+      router.push(`/patient?tab=${activeTab}`, { scroll: false });
+    } else {
+      router.push('/patient', { scroll: false });
+    }
+  }, [activeTab, router]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+  };
 
   const renderActiveTabContent = () => {
     switch(activeTab) {
@@ -76,7 +99,7 @@ export default function PatientPage() {
         <div className="md:col-span-3 lg:col-span-2 mb-4 md:mb-0 md:h-full">
           <PatientNavigation
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
           />
         </div>
 
