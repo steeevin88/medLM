@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText, AlertCircle, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { getReportsForDoctor, getReportById, updateReportStatus } from '@/actions/report';
 import { createDataRequest } from '@/actions/dataRequest';
 import ReactMarkdown from 'react-markdown';
@@ -19,6 +19,31 @@ import {
   DialogTitle,
   DialogClose
 } from "@/components/ui/dialog";
+
+interface ObfuscatedUser {
+  id: string;
+  userId: string;
+  age?: number | null;
+  sex?: boolean | null;
+  activityLevel?: string | null;
+  allergies?: string[];
+  healthIssues?: string[];
+  diet?: string[];
+}
+
+interface Report {
+  id: string;
+  body: string;
+  createdAt: string | Date;
+  status: string;
+  obfuscatedUser?: ObfuscatedUser | null;
+  patientId: string;
+}
+
+interface MarkdownComponentProps {
+  children: React.ReactNode;
+  [key: string]: unknown;
+}
 
 // OmittedDataField component for consistent rendering
 const OmittedDataField = ({
@@ -74,12 +99,11 @@ const OmittedDataField = ({
 
 export default function DoctorDashboard() {
   const { user, isLoaded: isUserLoaded } = useUser();
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-  const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [requestedDataAccess, setRequestedDataAccess] = useState<{[key: string]: {[field: string]: boolean}}>({});
   const [accessRequestStatus, setAccessRequestStatus] = useState<{[key: string]: {[field: string]: 'PENDING' | 'APPROVED' | 'DENIED' | null}}>({});
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -92,9 +116,9 @@ export default function DoctorDashboard() {
 
       try {
         const { reports: doctorReports } = await getReportsForDoctor(user.id);
-        setReports(doctorReports);
-      } catch (error) {
-        console.error("Error loading reports:", error);
+        setReports(doctorReports as Report[]);
+      } catch (err) {
+        console.error("Error loading reports:", err);
       } finally {
         setLoading(false);
       }
@@ -108,7 +132,7 @@ export default function DoctorDashboard() {
   const filteredReports = reports.filter(report => {
     const lowerSearchQuery = searchQuery.toLowerCase();
     return (
-      report.body.toLowerCase().includes(lowerSearchQuery) ||
+      (report.body && typeof report.body === 'string' && report.body.toLowerCase().includes(lowerSearchQuery)) ||
       report.id.toLowerCase().includes(lowerSearchQuery) ||
       (report.obfuscatedUser?.healthIssues?.some((issue: string) =>
         issue.toLowerCase().includes(lowerSearchQuery)
@@ -140,18 +164,18 @@ export default function DoctorDashboard() {
       const reportId = selectedReportId!;
 
       try {
-        const { report, error } = await getReportById(reportId);
+        const { report } = await getReportById(reportId);
 
-        if (error || !report) {
+        if (!report) {
           const mockReport = reports.find(r => r.id === reportId);
           setSelectedReport(mockReport || null);
         } else {
-          setSelectedReport(report);
+          setSelectedReport(report as Report);
         }
 
         setModalOpen(true);
-      } catch (error) {
-        console.error("Error loading report:", error);
+      } catch (err) {
+        console.error("Error loading report:", err);
         const fallbackReport = reports.find(r => r.id === reportId);
         setSelectedReport(fallbackReport || null);
 
@@ -165,11 +189,6 @@ export default function DoctorDashboard() {
   }, [selectedReportId, reports]);
 
   const requestFieldAccess = (reportId: string, field: string) => {
-    setRequestedDataAccess(prev => ({
-      ...prev,
-      [reportId]: { ...(prev[reportId] || {}), [field]: true }
-    }));
-
     setAccessRequestStatus(prev => ({
       ...prev,
       [reportId]: { ...(prev[reportId] || {}), [field]: 'PENDING' }
@@ -179,7 +198,7 @@ export default function DoctorDashboard() {
       try {
         if (!selectedReport) return;
 
-        const { success, dataRequest, error } = await createDataRequest(
+        const { success, error } = await createDataRequest(
           reportId,
           user?.id || '',
           selectedReport.patientId,
@@ -191,8 +210,8 @@ export default function DoctorDashboard() {
         }
 
         console.log(`Access requested for ${field} in report ${reportId}`);
-      } catch (error) {
-        console.error("Error requesting access:", error);
+      } catch (err) {
+        console.error("Error requesting access:", err);
         setAccessRequestStatus(prev => ({
           ...prev,
           [reportId]: { ...(prev[reportId] || {}), [field]: null }
@@ -207,43 +226,43 @@ export default function DoctorDashboard() {
     return accessRequestStatus[reportId]?.[field] || null;
   };
 
-  const isFieldOmitted = (value: any) => {
+  const isFieldOmitted = (value: unknown) => {
     return value === null ||
            value === undefined ||
            (Array.isArray(value) && value.length === 0);
   };
 
-  const MarkdownComponents = {
-    h1: (props: any) => <h1 className="text-2xl font-bold my-4" {...props} />,
-    h2: (props: any) => <h2 className="text-xl font-semibold my-3" {...props} />,
-    h3: (props: any) => <h3 className="text-lg font-medium my-2" {...props} />,
-    p: (props: any) => <p className="my-2" {...props} />,
-    ul: (props: any) => <ul className="list-disc pl-5 my-2" {...props} />,
-    ol: (props: any) => <ol className="list-decimal pl-5 my-2" {...props} />,
-    li: (props: any) => <li className="ml-2 my-1" {...props} />,
-    strong: (props: any) => <strong className="font-bold" {...props} />,
-    em: (props: any) => <em className="italic" {...props} />
+  const MarkdownComponents: Record<string, React.FC<MarkdownComponentProps>> = {
+    h1: (props) => <h1 className="text-2xl font-bold my-4" {...props} />,
+    h2: (props) => <h2 className="text-xl font-semibold my-3" {...props} />,
+    h3: (props) => <h3 className="text-lg font-medium my-2" {...props} />,
+    p: (props) => <p className="my-2" {...props} />,
+    ul: (props) => <ul className="list-disc pl-5 my-2" {...props} />,
+    ol: (props) => <ol className="list-decimal pl-5 my-2" {...props} />,
+    li: (props) => <li className="ml-2 my-1" {...props} />,
+    strong: (props) => <strong className="font-bold" {...props} />,
+    em: (props) => <em className="italic" {...props} />
   };
 
   // Handler to toggle a report's status between REVIEWED and PENDING
-  const toggleReportStatus = async (e: React.MouseEvent, report: any) => {
+  const toggleReportStatus = async (e: React.MouseEvent, report: Report) => {
     e.stopPropagation(); // Prevent card click event
 
     if (report.status !== 'REVIEWED') return;
 
     try {
-      const { success, report: updatedReport, error } = await updateReportStatus(report.id, 'PENDING');
+      const { success, report: updatedReport } = await updateReportStatus(report.id, 'PENDING');
 
       if (success && updatedReport) {
         // Update in reports array
         const updatedReports = reports.map(r =>
-          r.id === report.id ? updatedReport : r
+          r.id === report.id ? updatedReport as Report : r
         );
         setReports(updatedReports);
 
         // Update selected report if it's the same one
         if (selectedReport && selectedReport.id === report.id) {
-          setSelectedReport(updatedReport);
+          setSelectedReport(updatedReport as Report);
         }
       } else {
         // Fallback update if API call succeeds but doesn't return data
@@ -256,8 +275,15 @@ export default function DoctorDashboard() {
           setSelectedReport({...selectedReport, status: 'PENDING'});
         }
       }
-    } catch (error) {
-      console.error("Error updating report status:", error);
+    } catch (err) {
+      console.error("Error updating report status:", err);
+      const updatedReports = reports.map(r =>
+        r.id === report.id
+          ? {...r, status: 'REVIEWED'}
+          : r
+      );
+      setReports(updatedReports);
+      setSelectedReport(prevReport => prevReport ? {...prevReport, status: 'REVIEWED'} : null);
     }
   };
 
@@ -335,7 +361,7 @@ export default function DoctorDashboard() {
                   <div>
                     <h4 className="text-xs text-muted-foreground uppercase font-medium mb-1.5">Health Issues:</h4>
                     <div className="flex flex-wrap gap-1.5">
-                      {report.obfuscatedUser?.healthIssues?.length > 0 ?
+                      {report.obfuscatedUser?.healthIssues && report.obfuscatedUser.healthIssues.length > 0 ?
                         report.obfuscatedUser.healthIssues.map((issue: string, idx: number) => (
                           <Badge key={idx} variant="outline">
                             {issue.replace(/_/g, ' ').toLowerCase()}
@@ -384,14 +410,14 @@ export default function DoctorDashboard() {
 
                             const updateStatus = async () => {
                               try {
-                                const { success, report: updatedReport, error } = await updateReportStatus(selectedReport.id, 'REVIEWED');
+                                const { success, report: updatedReport } = await updateReportStatus(selectedReport.id, 'REVIEWED');
 
                                 if (success && updatedReport) {
                                   const updatedReports = reports.map(r =>
-                                    r.id === selectedReport.id ? updatedReport : r
+                                    r.id === selectedReport.id ? updatedReport as Report : r
                                   );
                                   setReports(updatedReports);
-                                  setSelectedReport(updatedReport);
+                                  setSelectedReport(updatedReport as Report);
                                 } else {
                                   const updatedReports = reports.map(r =>
                                     r.id === selectedReport.id
@@ -399,17 +425,17 @@ export default function DoctorDashboard() {
                                       : r
                                   );
                                   setReports(updatedReports);
-                                  setSelectedReport({...selectedReport, status: 'REVIEWED'});
+                                  setSelectedReport(prevReport => prevReport ? {...prevReport, status: 'REVIEWED'} : null);
                                 }
-                              } catch (error) {
-                                console.error("Error updating report status:", error);
+                              } catch (err) {
+                                console.error("Error updating report status:", err);
                                 const updatedReports = reports.map(r =>
                                   r.id === selectedReport.id
                                     ? {...r, status: 'REVIEWED'}
                                     : r
                                 );
                                 setReports(updatedReports);
-                                setSelectedReport({...selectedReport, status: 'REVIEWED'});
+                                setSelectedReport(prevReport => prevReport ? {...prevReport, status: 'REVIEWED'} : null);
                               }
                             };
 
@@ -517,7 +543,7 @@ export default function DoctorDashboard() {
                             />
                           ) : (
                             <div className="flex flex-wrap gap-1.5 mb-3">
-                              {selectedReport.obfuscatedUser.healthIssues.map((issue: string, idx: number) => (
+                              {selectedReport.obfuscatedUser?.healthIssues?.map((issue: string, idx: number) => (
                                 <Badge key={idx} variant="outline" className="bg-red-50">
                                   {issue.replace(/_/g, ' ').toLowerCase()}
                                 </Badge>
@@ -535,7 +561,7 @@ export default function DoctorDashboard() {
                             />
                           ) : (
                             <div className="flex flex-wrap gap-1.5 mb-3">
-                              {selectedReport.obfuscatedUser.allergies.map((allergy: string, idx: number) => (
+                              {selectedReport.obfuscatedUser?.allergies?.map((allergy: string, idx: number) => (
                                 <Badge key={idx} variant="outline" className="bg-amber-50">
                                   {allergy.replace(/_/g, ' ').toLowerCase()}
                                 </Badge>
@@ -553,7 +579,7 @@ export default function DoctorDashboard() {
                             />
                           ) : (
                             <div className="flex flex-wrap gap-1.5">
-                              {selectedReport.obfuscatedUser.diet.map((diet: string, idx: number) => (
+                              {selectedReport.obfuscatedUser?.diet?.map((diet: string, idx: number) => (
                                 <Badge key={idx} variant="outline" className="bg-green-50">
                                   {diet.replace(/_/g, ' ').toLowerCase()}
                                 </Badge>

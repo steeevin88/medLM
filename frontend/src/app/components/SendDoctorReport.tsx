@@ -9,10 +9,18 @@ import { sendDoctorReport } from "@/actions/report";
 
 type Step = "compose" | "select-doctor";
 
+interface Doctor {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  specialization?: string | null;
+  hospital?: string | null;
+  email?: string | null;
+}
+
 export default function SendDoctorReport() {
   const [reportBody, setReportBody] = useState("");
   const [currentStep, setCurrentStep] = useState<Step>("compose");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleContinue = () => {
     if (!reportBody.trim()) {
@@ -56,8 +64,6 @@ export default function SendDoctorReport() {
   );
 
   const handleDoctorSelect = async (doctorId: string) => {
-    setIsSubmitting(true);
-
     try {
       const result = await sendDoctorReport({
         reportBody,
@@ -74,8 +80,6 @@ export default function SendDoctorReport() {
     } catch (error) {
       console.error("Error sending report:", error);
       alert("There was an error sending your report. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -107,7 +111,7 @@ export default function SendDoctorReport() {
 
 function DoctorList({ onSelect }: { onSelect: (doctorId: string) => void }) {
   const [loading, setLoading] = useState(true);
-  const [doctors, setDoctors] = useState<any[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -118,7 +122,7 @@ function DoctorList({ onSelect }: { onSelect: (doctorId: string) => void }) {
         if (result.error) {
           setError(result.error);
         } else {
-          setDoctors(result.doctors);
+          setDoctors(result.doctors as Doctor[]);
         }
       } catch (err) {
         console.error("Error loading doctors:", err);
