@@ -8,7 +8,7 @@ import { BellIcon } from "lucide-react";
 
 export default function Navbar() {
   return (
-    <header className="bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-md">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-md">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold">
           <svg
