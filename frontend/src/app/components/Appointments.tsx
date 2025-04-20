@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, Clock, User, Phone, Video, MapPin, AlertCircle, Plus, Calendar, Lock, FlaskConical, MessageCircle, Shield, EyeOff, SendHorizontal } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Phone, Video, MapPin, AlertCircle, Plus, Calendar, Lock, FlaskConical, MessageCircle, Shield, EyeOff, SendHorizontal, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@clerk/nextjs";
 import { Switch } from "@/components/ui/switch";
@@ -44,6 +44,7 @@ interface LabTest {
   reason: string;
   orderedBy: string;
   isAnonymous: boolean;
+  recommendedBy?: string;
 }
 
 type AppointmentOrLab = Appointment | LabTest;
@@ -53,24 +54,12 @@ export default function Appointments() {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [chatMessages, setChatMessages] = useState<{[key: string]: {sender: 'user' | 'doctor', message: string, timestamp: string}[]}>({});
-  const [labModalOpen, setLabModalOpen] = useState(false);
   const [newAppointmentModalOpen, setNewAppointmentModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('upcoming');
-
-  // Form state for lab test form
-  const [labTestType, setLabTestType] = useState<string>("");
-  const [labDate, setLabDate] = useState<string>("");
-  const [labTime, setLabTime] = useState<string>("");
-  const [labReason, setLabReason] = useState<string>("");
-  const [labIsAnonymous, setLabIsAnonymous] = useState<boolean>(false);
-  const [isSubmittingLab, setIsSubmittingLab] = useState<boolean>(false);
-  const [labLocation, setLabLocation] = useState<string>("");
-  const [labOrderedBy, setLabOrderedBy] = useState<string>("");
 
   // Form state for appointment form
   const [appointmentType, setAppointmentType] = useState<string>("");
   const [appointmentSpecialty, setAppointmentSpecialty] = useState<string>("");
-  const [appointmentDoctorId, setAppointmentDoctorId] = useState<string>("sample-doctor-id");
   const [appointmentDate, setAppointmentDate] = useState<string>("");
   const [appointmentTime, setAppointmentTime] = useState<string>("");
   const [appointmentLocation, setAppointmentLocation] = useState<string>("");
@@ -159,9 +148,10 @@ export default function Appointments() {
         location: "MedLab Testing Center",
         address: "456 Health Pkwy",
         status: "SCHEDULED",
-        reason: "Annual checkup",
+        reason: "Annual wellness check",
         orderedBy: "Dr. Sarah Johnson",
-        isAnonymous: true
+        isAnonymous: true,
+        recommendedBy: "Dr. Sarah Johnson"
       },
       {
         id: "lab-2",
@@ -173,7 +163,8 @@ export default function Appointments() {
         status: "SCHEDULED",
         reason: "Cholesterol monitoring",
         orderedBy: "Dr. Michael Chen",
-        isAnonymous: false
+        isAnonymous: false,
+        recommendedBy: "AI Health Assistant"
       },
       {
         id: "lab-3",
@@ -185,7 +176,20 @@ export default function Appointments() {
         status: "COMPLETED",
         reason: "Kidney function test",
         orderedBy: "Dr. Emily Roberts",
-        isAnonymous: false
+        isAnonymous: false,
+        recommendedBy: "Dr. Emily Roberts"
+      },
+      {
+        id: "lab-4",
+        testName: "A1C Test",
+        date: "Pending Approval",
+        time: "To be scheduled",
+        location: "Your preferred facility",
+        status: "RECOMMENDED",
+        reason: "Diabetes screening based on your health profile",
+        orderedBy: "Not yet ordered",
+        isAnonymous: false,
+        recommendedBy: "AI Health Assistant"
       }
     ]
   };
@@ -215,6 +219,8 @@ export default function Appointments() {
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Cancelled</Badge>;
       case "SCHEDULED": 
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Scheduled</Badge>;
+      case "RECOMMENDED":
+        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">Recommended</Badge>;
       default: 
         return <Badge>Unknown</Badge>;
     }
@@ -286,28 +292,11 @@ export default function Appointments() {
     }
   };
   
-  const scheduleLab = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmittingLab(true);
-
-    // Simulate submission delay
-    setTimeout(() => {
-      toast({
-        title: "Lab Test Scheduled",
-        description: "Your lab test request has been submitted.",
-      });
-
-      setLabModalOpen(false);
-      // Reset form state
-      setLabTestType("");
-      setLabDate("");
-      setLabTime("");
-      setLabReason("");
-      setLabIsAnonymous(false);
-      setLabLocation("");
-      setLabOrderedBy("");
-      setIsSubmittingLab(false);
-    }, 1000);
+  const acceptLabRecommendation = (labId: string) => {
+    toast({
+      title: "Lab Test Accepted",
+      description: `Lab test #${labId.slice(-4)} has been accepted and will be scheduled. You'll receive further instructions.`,
+    });
   };
   
   const scheduleAppointment = (e: React.FormEvent) => {
@@ -355,7 +344,7 @@ export default function Appointments() {
               Appointments & Labs
             </CardTitle>
             <CardDescription>
-              Manage your healthcare appointments and lab tests
+              Manage your healthcare appointments and lab recommendations
             </CardDescription>
           </div>
           <div className="flex items-center space-x-2">
@@ -377,72 +366,10 @@ export default function Appointments() {
             <TabsList>
               <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
               <TabsTrigger value="requested">Requested</TabsTrigger>
-              <TabsTrigger value="labs">Lab Tests</TabsTrigger>
+              <TabsTrigger value="labs">Lab Recommendations</TabsTrigger>
               <TabsTrigger value="past">Past</TabsTrigger>
             </TabsList>
             <div className="flex space-x-2">
-              <Dialog open={labModalOpen} onOpenChange={setLabModalOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline" className="gap-1">
-                    <FlaskConical className="h-4 w-4" />
-                    <span>Schedule Lab</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Schedule Lab Test</DialogTitle>
-                    <DialogDescription>
-                      Schedule a laboratory test or procedure
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={scheduleLab} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="test-type">Test Type</Label>
-                      <Select value={labTestType} onValueChange={setLabTestType} required>
-                        <SelectTrigger id="test-type">
-                          <SelectValue placeholder="Select test type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="blood">Blood Panel</SelectItem>
-                          <SelectItem value="urine">Urinalysis</SelectItem>
-                          <SelectItem value="imaging">Imaging</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="test-date">Preferred Date</Label>
-                      <Input id="test-date" type="date" value={labDate} onChange={(e) => setLabDate(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="test-time">Preferred Time</Label>
-                      <Input id="test-time" type="time" value={labTime} onChange={(e) => setLabTime(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="test-location">Location</Label>
-                      <Input id="test-location" placeholder="e.g., MedLab Testing Center" value={labLocation} onChange={(e) => setLabLocation(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="test-ordered-by">Ordered By</Label>
-                      <Input id="test-ordered-by" placeholder="e.g., Dr. Smith or Self-requested" value={labOrderedBy} onChange={(e) => setLabOrderedBy(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="test-reason">Reason</Label>
-                      <Textarea id="test-reason" placeholder="Briefly describe why you need this test" value={labReason} onChange={(e) => setLabReason(e.target.value)} />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="test-anonymous" checked={labIsAnonymous} onCheckedChange={(checked: boolean | string) => setLabIsAnonymous(checked === true)} />
-                      <Label htmlFor="test-anonymous" className="text-sm">Schedule anonymously</Label>
-                    </div>
-                    <DialogFooter>
-                      <Button type="submit" disabled={isSubmittingLab}>
-                        {isSubmittingLab ? 'Scheduling...' : 'Schedule Test'}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-
               <Dialog open={newAppointmentModalOpen} onOpenChange={setNewAppointmentModalOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="gap-1">
@@ -565,19 +492,19 @@ export default function Appointments() {
                         <CalendarIcon className="h-6 w-6 text-gray-400" />
                       )}
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-1">No {tabValue === "labs" ? "lab tests" : tabValue + " appointments"}</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">No {tabValue === "labs" ? "lab recommendations" : tabValue + " appointments"}</h3>
                     <p className="text-gray-500 mb-4">
                       {tabValue === "upcoming" 
                         ? "You don't have any upcoming appointments scheduled." 
                         : tabValue === "requested"
                           ? "You haven't requested any appointments yet."
                           : tabValue === "labs" 
-                            ? "You don't have any lab tests scheduled."
+                            ? "You don't have any lab tests recommended."
                             : "You don't have any past appointments."}
                     </p>
-                    {tabValue !== "past" && (
-                      <Button onClick={() => tabValue === "labs" ? setLabModalOpen(true) : setNewAppointmentModalOpen(true)}>
-                        {tabValue === "labs" ? "Schedule a Lab Test" : "Schedule an Appointment"}
+                    {tabValue !== "past" && tabValue !== "labs" && (
+                      <Button onClick={() => setNewAppointmentModalOpen(true)}>
+                        Schedule an Appointment
                       </Button>
                     )}
                   </CardContent>
@@ -610,7 +537,9 @@ export default function Appointments() {
                             {isLabTest(appointment) ? appointment.testName : appointment.doctorName}
                           </h3>
                           <p className="text-sm text-gray-600 mb-3">
-                            {isLabTest(appointment) ? `Ordered by: ${appointment.orderedBy}` : appointment.specialty}
+                            {isLabTest(appointment) ? 
+                              `Recommended by: ${appointment.recommendedBy || appointment.orderedBy}` : 
+                              appointment.specialty}
                           </p>
                           
                           <div className="flex items-center gap-2 text-gray-700 mb-1">
@@ -649,6 +578,13 @@ export default function Appointments() {
                             )}
                           </div>
                           
+                          {isLabTest(appointment) && appointment.reason && (
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-700 mb-1">Reason</h4>
+                              <p className="text-sm text-gray-600">{appointment.reason}</p>
+                            </div>
+                          )}
+                          
                           {isAppointment(appointment) && appointment.notes && (
                             <div>
                               <h4 className="text-sm font-medium text-gray-700 mb-1">Notes</h4>
@@ -667,6 +603,22 @@ export default function Appointments() {
                               <Button variant="outline" className="gap-1">
                                 <AlertCircle className="h-4 w-4" />
                                 Reschedule
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {isLabTest(appointment) && appointment.status === "RECOMMENDED" && (
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              <Button 
+                                className="gap-1"
+                                onClick={() => acceptLabRecommendation(appointment.id)}
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                                Accept Recommendation
+                              </Button>
+                              <Button variant="outline" className="gap-1">
+                                <MessageCircle className="h-4 w-4" />
+                                Ask Questions
                               </Button>
                             </div>
                           )}
@@ -784,17 +736,15 @@ export default function Appointments() {
                 ))
               )}
               
-              {activeTab !== "past" && getAppointmentList(tabValue).length > 0 && (
+              {activeTab !== "past" && activeTab !== "labs" && getAppointmentList(tabValue).length > 0 && (
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => activeTab === "labs" ? setLabModalOpen(true) : setNewAppointmentModalOpen(true)}
+                  onClick={() => setNewAppointmentModalOpen(true)}
                 >
-                  {activeTab === "labs" 
-                    ? "Schedule Another Test" 
-                    : activeTab === "upcoming" 
-                      ? "Schedule New Appointment" 
-                      : "Submit New Request"}
+                  {activeTab === "upcoming" 
+                    ? "Schedule New Appointment" 
+                    : "Submit New Request"}
                 </Button>
               )}
             </TabsContent>
