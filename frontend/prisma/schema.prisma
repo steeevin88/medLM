@@ -34,6 +34,44 @@ model User {
   additionalInfo String?
   heartRate      Int?
   bloodPressure  String?
+  isDoctor       Boolean       @default(false)
+
+  // Relations
+  sentReports    Report[]  @relation("PatientReports")
+  receivedReports Report[] @relation("DoctorReports")
+}
+
+model ObfuscatedUser {
+  id             String        @id @map("_id") @db.ObjectId
+  userId         String        @db.ObjectId
+  age            Int?
+  sex            Boolean?
+  activityLevel  ActivityLevel?
+  allergies      Allergy[]
+  healthIssues   HealthIssue[]
+  diet           Diet[]
+
+  // Relations
+  reports        Report[]
+}
+
+model Report {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  body           String
+  createdAt      DateTime      @default(now())
+  status         ReportStatus  @default(PENDING)
+
+  // Patient (anonymized)
+  obfuscatedUser ObfuscatedUser @relation(fields: [obfuscatedUserId], references: [id])
+  obfuscatedUserId String       @db.ObjectId
+
+  // Original patient (for internal reference)
+  patient        User          @relation("PatientReports", fields: [patientId], references: [id])
+  patientId      String        @db.ObjectId
+
+  // Doctor receiving the report
+  doctor         User          @relation("DoctorReports", fields: [doctorId], references: [id])
+  doctorId       String        @db.ObjectId
 }
 
 enum ActivityLevel {
@@ -84,4 +122,10 @@ enum Diet {
   DAIRY_FREE
   LOW_CARB
   OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESPONDED
 }
