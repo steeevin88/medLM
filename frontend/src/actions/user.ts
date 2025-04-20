@@ -55,13 +55,43 @@ export async function createPatient(userId: string, patientData: PatientData) {
       bloodPressure: patientData.bloodPressure,
     };
 
-    const newPatient = await prisma.patient.create({
-      data: input,
+    // Check if patient already exists
+    const existingPatient = await prisma.patient.findUnique({
+      where: { id: userId }
     });
 
-    return { success: true, patient: newPatient, error: null };
+    let result;
+    if (existingPatient) {
+      // Update existing patient
+      result = await prisma.patient.update({
+        where: { id: userId },
+        data: input,
+      });
+    } else {
+      // Create new patient
+      result = await prisma.patient.create({
+        data: input,
+      });
+    }
+
+    return { success: true, patient: result, error: null };
   } catch (error) {
-    console.error("Error creating patient profile:", error);
-    return { success: false, patient: null, error: "Failed to create patient profile" };
+    console.error("Error creating/updating patient profile:", error);
+    return { success: false, patient: null, error: "Failed to create/update patient profile" };
+  }
+}
+
+export async function getPatientByUserId(userId: string) {
+  try {
+    const patient = await prisma.patient.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    return { success: true, patient, error: null };
+  } catch (error) {
+    console.error("Error fetching patient profile:", error);
+    return { success: false, patient: null, error: "Failed to fetch patient profile" };
   }
 }
