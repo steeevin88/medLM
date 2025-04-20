@@ -4,7 +4,6 @@ import React from 'react';
 import Link from 'next/link';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { Button } from "@/components/ui/button";
-import { BellIcon } from "lucide-react";
 
 export default function Navbar() {
   return (
