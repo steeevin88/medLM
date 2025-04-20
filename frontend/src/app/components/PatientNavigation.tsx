@@ -10,12 +10,12 @@ import {
   Heart, 
   Activity, 
   Calendar, 
-  Settings,
-  BellIcon
+  Settings
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useUser } from "@clerk/nextjs";
 
 interface NavigationProps {
   activeTab: string;
@@ -23,6 +23,8 @@ interface NavigationProps {
 }
 
 export default function PatientNavigation({ activeTab, onTabChange }: NavigationProps) {
+  const { user } = useUser();
+  
   const navigationItems = [
     {
       id: 'chat',
@@ -62,21 +64,25 @@ export default function PatientNavigation({ activeTab, onTabChange }: Navigation
     }
   ];
 
+  // Get user initials for avatar fallback
+  const getInitials = () => {
+    if (!user) return "?";
+    const firstInitial = user.firstName?.[0] || '';
+    const lastInitial = user.lastName?.[0] || '';
+    return firstInitial + lastInitial || user.username?.[0] || "?";
+  };
+
   return (
     <Card className="h-full flex flex-col overflow-hidden">
       <div className="p-4 border-b flex items-center gap-3">
         <Avatar className="h-10 w-10">
-          <AvatarImage src="/avatar-placeholder.png" />
-          <AvatarFallback className="bg-primary text-primary-foreground">JP</AvatarFallback>
+          <AvatarImage src={user?.imageUrl || "/avatar-placeholder.png"} alt={user?.fullName || "User"} />
+          <AvatarFallback className="bg-primary text-primary-foreground">{getInitials()}</AvatarFallback>
         </Avatar>
         <div className="flex-grow min-w-0">
-          <h2 className="font-medium text-sm truncate">Jane Patel</h2>
+          <h2 className="font-medium text-sm truncate">{user?.fullName || user?.username || "User"}</h2>
           <p className="text-xs text-muted-foreground">Patient</p>
         </div>
-        <Button size="icon" variant="ghost" className="relative flex-shrink-0">
-          <BellIcon className="h-5 w-5" />
-          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">3</span>
-        </Button>
       </div>
       <div className="px-2 py-4 flex-grow overflow-y-auto">
         <div className="space-y-1 text-sm font-medium">

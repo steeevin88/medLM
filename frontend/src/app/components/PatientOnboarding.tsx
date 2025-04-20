@@ -97,7 +97,7 @@ export default function PatientOnboarding() {
   }
 
   return (
-    <Card>
+    <Card className="h-full overflow-auto">
       <CardHeader>
         <CardTitle>Complete Your Health Profile</CardTitle>
         <CardDescription>

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { Button } from "@/components/ui/button";
+import { BellIcon } from "lucide-react";
 
 export default function Navbar() {
   return (
@@ -30,6 +31,10 @@ export default function Navbar() {
             </SignInButton>
           </SignedOut>
           <SignedIn>
+            <Button size="icon" variant="ghost" className="relative flex-shrink-0 text-white hover:text-white/80 hover:bg-blue-600/20">
+              <BellIcon className="h-5 w-5" />
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">3</span>
+            </Button>
             <UserButton afterSignOutUrl="/" />
           </SignedIn>
         </div>

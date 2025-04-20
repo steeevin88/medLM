@@ -103,7 +103,7 @@ export default function DocumentUpload() {
   };
 
   return (
-    <Card className="flex flex-col h-full">
+    <Card className="flex flex-col h-full overflow-auto">
       <CardHeader className="pb-3">
         <CardTitle>Medical Documents</CardTitle>
         <CardDescription>

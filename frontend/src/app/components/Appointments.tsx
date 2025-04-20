@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar as CalendarIcon, Clock, User, Phone, Video, MapPin, AlertCircle, Plus, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useUser } from "@clerk/nextjs";
 
 export default function Appointments() {
+  const { user } = useUser();
+
   // Dummy appointment data
   const appointments = {
     upcoming: [
@@ -206,7 +209,7 @@ export default function Appointments() {
                           <div className="flex justify-between mb-4">
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-600">Patient: Jane Patel</span>
+                              <span className="text-sm text-gray-600">Patient: {user?.fullName || user?.username || "User"}</span>
                             </div>
                             {getStatusBadge(appointment.status)}
                           </div>
