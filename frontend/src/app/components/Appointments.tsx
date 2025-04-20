@@ -4,12 +4,86 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, Clock, User, Phone, Video, MapPin, AlertCircle, Plus, Calendar, FlaskConical, Stethoscope } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Phone, Video, MapPin, AlertCircle, Plus, Calendar, FlaskConical, Stethoscope, MessageSquare, ArrowLeft, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@clerk/nextjs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+// Define chat message type
+interface ChatMessage {
+  id: number;
+  sender: 'doctor' | 'patient' | 'ai';
+  senderName: string;
+  message: string;
+  timestamp: string;
+}
+
+// Define appointment type
+interface Appointment {
+  id: number;
+  doctorName: string;
+  specialty: string;
+  date: string;
+  time: string;
+  location: string;
+  address?: string;
+  type: 'in-person' | 'video' | 'phone';
+  notes: string;
+  status: 'confirmed' | 'pending' | 'completed' | 'cancelled';
+  chatHistory?: ChatMessage[];
+}
 
 export default function Appointments() {
   const { user } = useUser();
+  const [selectedChat, setSelectedChat] = useState<number | null>(null);
+  const [newMessage, setNewMessage] = useState('');
+
+  // Mock chat histories
+  const chatHistories: Record<number, ChatMessage[]> = {
+    1: [
+      { id: 1, sender: 'doctor', senderName: 'Dr. Sarah Johnson', message: 'Hello! How are you feeling today?', timestamp: '10:30 AM' },
+      { id: 2, sender: 'patient', senderName: user?.fullName || 'Patient', message: "I've been having some chest discomfort occasionally.", timestamp: '10:31 AM' },
+      { id: 3, sender: 'doctor', senderName: 'Dr. Sarah Johnson', message: "I see. Can you describe the discomfort? Is it a sharp pain, pressure, or something else?", timestamp: '10:32 AM' },
+      { id: 4, sender: 'patient', senderName: user?.fullName || 'Patient', message: 'It\'s more like pressure, especially after walking up stairs.', timestamp: '10:33 AM' },
+      { id: 5, sender: 'doctor', senderName: 'Dr. Sarah Johnson', message: "Thank you for that information. I'd like to run some tests during your upcoming appointment. In the meantime, please avoid strenuous activities.", timestamp: '10:35 AM' },
+      { id: 6, sender: 'ai', senderName: 'MedAI', message: "Just a reminder: It's important to note any other symptoms like shortness of breath or dizziness. This will help Dr. Johnson with her assessment.", timestamp: '10:36 AM' }
+    ],
+    2: [
+      { id: 1, sender: 'doctor', senderName: 'Dr. Michael Chen', message: 'How has your skin been responding to the new treatment?', timestamp: '3:15 PM' },
+      { id: 2, sender: 'patient', senderName: user?.fullName || 'Patient', message: 'The redness has decreased, but I still have some itching.', timestamp: '3:17 PM' },
+      { id: 3, sender: 'doctor', senderName: 'Dr. Michael Chen', message: "That's good progress. The itching might take a bit longer to subside. Have you been applying the cream twice daily as prescribed?", timestamp: '3:19 PM' },
+      { id: 4, sender: 'patient', senderName: user?.fullName || 'Patient', message: 'Yes, morning and night as directed.', timestamp: '3:20 PM' },
+      { id: 5, sender: 'ai', senderName: 'MedAI', message: 'Tip: Taking photos of your affected skin areas daily can help track progress over time. Would you like me to create a reminder for this?', timestamp: '3:21 PM' }
+    ],
+    3: [
+      { id: 1, sender: 'doctor', senderName: 'Dr. Emily Roberts', message: 'Your annual checkup results look good overall.', timestamp: '9:15 AM' },
+      { id: 2, sender: 'doctor', senderName: 'Dr. Emily Roberts', message: 'Your blood pressure is slightly elevated though. Have you been experiencing stress lately?', timestamp: '9:16 AM' },
+      { id: 3, sender: 'patient', senderName: user?.fullName || 'Patient', message: 'Work has been quite demanding the past few months.', timestamp: '9:18 AM' },
+      { id: 4, sender: 'doctor', senderName: 'Dr. Emily Roberts', message: "I understand. Let's discuss some stress management techniques you could incorporate into your routine.", timestamp: '9:20 AM' },
+      { id: 5, sender: 'ai', senderName: 'MedAI', message: "I can suggest some meditation apps that have been clinically shown to reduce stress and lower blood pressure. Would that be helpful?", timestamp: '9:21 AM' }
+    ],
+    4: [
+      { id: 1, sender: 'doctor', senderName: 'Dr. James Wilson', message: "Based on what you've described about your knee pain, it sounds like it could be a minor strain.", timestamp: '11:50 AM' },
+      { id: 2, sender: 'patient', senderName: user?.fullName || 'Patient', message: "Is that serious? Should I be worried?", timestamp: '11:51 AM' },
+      { id: 3, sender: 'doctor', senderName: 'Dr. James Wilson', message: "It's not typically serious, but we should monitor it. Try resting the knee and applying ice for 15-20 minutes a few times daily.", timestamp: '11:53 AM' },
+      { id: 4, sender: 'ai', senderName: 'MedAI', message: 'Research shows that gentle strengthening exercises can help with knee strains. I can provide some recommended exercises after Dr. Wilson approves them for your specific situation.', timestamp: '11:55 AM' }
+    ],
+    5: [
+      { id: 1, sender: 'doctor', senderName: 'Dr. Sarah Johnson', message: "Thank you for coming in today. After our consultation, I'd like to monitor your heart health more closely.", timestamp: '10:45 AM' },
+      { id: 2, sender: 'patient', senderName: user?.fullName || 'Patient', message: "Is there something concerning in my results?", timestamp: '10:46 AM' },
+      { id: 3, sender: 'doctor', senderName: 'Dr. Sarah Johnson', message: "Nothing alarming, but given your family history, I prefer to be proactive. I'm recommending some additional tests.", timestamp: '10:48 AM' },
+      { id: 4, sender: 'ai', senderName: 'MedAI', message: "Dr. Johnson has ordered an EKG and lipid panel. I'll send you preparation instructions and fasting requirements prior to these tests.", timestamp: '10:50 AM' }
+    ],
+    6: [
+      { id: 1, sender: 'patient', senderName: user?.fullName || 'Patient', message: "I've been experiencing frequent headaches that seem to be getting worse.", timestamp: '2:30 PM' },
+      { id: 2, sender: 'doctor', senderName: 'Dr. Lisa Martinez', message: "I'm sorry to hear that. Can you describe the pain and frequency?", timestamp: '2:35 PM' },
+      { id: 3, sender: 'patient', senderName: user?.fullName || 'Patient', message: 'They happen almost daily, usually throbbing pain on one side of my head.', timestamp: '2:37 PM' },
+      { id: 4, sender: 'doctor', senderName: 'Dr. Lisa Martinez', message: 'Thank you for sharing this information. This helps me prepare for our consultation. In the meantime, please keep a headache journal noting frequency, duration, and potential triggers.', timestamp: '2:40 PM' },
+      { id: 5, sender: 'ai', senderName: 'MedAI', message: 'I can help you track your headaches. Would you like me to set up a digital headache journal for you?', timestamp: '2:42 PM' }
+    ]
+  };
 
   // Dummy appointment data
   const appointments = {
@@ -22,7 +96,7 @@ export default function Appointments() {
         time: "10:30 AM",
         location: "Heart Health Clinic",
         address: "123 Medical Center Blvd.",
-        type: "in-person", // or "video" or "phone"
+        type: "in-person",
         notes: "Annual heart checkup",
         status: "confirmed"
       },
@@ -170,6 +244,124 @@ export default function Appointments() {
     }
   };
 
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !selectedChat) return;
+    
+    // In a real app, you would send this to an API
+    // For now, we'll just clear the input
+    setNewMessage('');
+  };
+
+  const getSenderAvatar = (sender: string, name: string) => {
+    switch(sender) {
+      case 'doctor':
+        return (
+          <Avatar>
+            <AvatarFallback className="bg-blue-100 text-blue-800">{name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+          </Avatar>
+        );
+      case 'patient':
+        return (
+          <Avatar>
+            <AvatarImage src={user?.imageUrl ?? ''} alt={name} />
+            <AvatarFallback className="bg-gray-100 text-gray-800">{name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+          </Avatar>
+        );
+      case 'ai':
+        return (
+          <Avatar>
+            <AvatarFallback className="bg-purple-100 text-purple-800">AI</AvatarFallback>
+          </Avatar>
+        );
+      default:
+        return (
+          <Avatar>
+            <AvatarFallback>?</AvatarFallback>
+          </Avatar>
+        );
+    }
+  };
+
+  // Get the current appointment being viewed in chat
+  const getCurrentAppointment = () => {
+    if (!selectedChat) return null;
+    
+    const allAppointments = [
+      ...appointments.upcoming,
+      ...appointments.requested,
+      ...appointments.past
+    ];
+    
+    return allAppointments.find(a => a.id === selectedChat);
+  };
+
+  if (selectedChat) {
+    const currentAppointment = getCurrentAppointment();
+    const chatMessages = chatHistories[selectedChat] || [];
+    
+    return (
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-3 border-b">
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setSelectedChat(null)}
+              className="gap-1"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to appointments
+            </Button>
+            <div className="flex items-center gap-2">
+              {currentAppointment && (
+                <>
+                  <span className="font-medium">{currentAppointment.doctorName}</span>
+                  <Badge variant="outline">{currentAppointment.specialty}</Badge>
+                </>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4">
+            {chatMessages.map((msg) => (
+              <div key={msg.id} className="flex gap-3">
+                {getSenderAvatar(msg.sender, msg.senderName)}
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">{msg.senderName}</span>
+                    <span className="text-xs text-gray-500">{msg.timestamp}</span>
+                  </div>
+                  <div className={`rounded-lg p-3 mt-1 ${
+                    msg.sender === 'doctor' ? 'bg-blue-50' :
+                    msg.sender === 'ai' ? 'bg-purple-50' : 'bg-gray-50'
+                  }`}>
+                    {msg.message}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+        <div className="p-4 border-t">
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Type a message..." 
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              className="flex-1"
+            />
+            <Button onClick={handleSendMessage} className="gap-1">
+              <Send className="h-4 w-4" />
+              Send
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="h-full overflow-auto">
       <CardHeader className="pb-3">
@@ -270,39 +462,50 @@ export default function Appointments() {
                             </div>
                             
                             {appointment.notes && (
-                              <div>
+                              <div className="mb-4">
                                 <h4 className="text-sm font-medium text-gray-700 mb-1">Notes</h4>
                                 <p className="text-sm text-gray-600">{appointment.notes}</p>
                               </div>
                             )}
                             
-                            {appointment.status === "confirmed" && activeTab === "current" && (
-                              <div className="mt-4 flex flex-wrap gap-2">
-                                {appointment.type === "video" && (
-                                  <Button className="gap-1">
-                                    <Video className="h-4 w-4" />
-                                    Join Video Call
-                                  </Button>
-                                )}
-                                <Button variant="outline" className="gap-1">
-                                  <AlertCircle className="h-4 w-4" />
-                                  Reschedule
-                                </Button>
-                              </div>
-                            )}
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              <Button 
+                                onClick={() => setSelectedChat(appointment.id)}
+                                variant="outline" 
+                                className="gap-1"
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                                View Conversation
+                              </Button>
 
-                            {appointment.status === "pending" && activeTab === "current" && (
-                              <div className="mt-4 flex flex-wrap gap-2">
-                                <Button className="gap-1">
-                                  <CalendarIcon className="h-4 w-4" />
-                                  Check Availability
-                                </Button>
-                                <Button variant="outline" className="gap-1">
-                                  <AlertCircle className="h-4 w-4" />
-                                  Cancel Request
-                                </Button>
-                              </div>
-                            )}
+                              {appointment.status === "confirmed" && activeTab === "current" && (
+                                <>
+                                  {appointment.type === "video" && (
+                                    <Button className="gap-1">
+                                      <Video className="h-4 w-4" />
+                                      Join Video Call
+                                    </Button>
+                                  )}
+                                  <Button variant="outline" className="gap-1">
+                                    <AlertCircle className="h-4 w-4" />
+                                    Reschedule
+                                  </Button>
+                                </>
+                              )}
+
+                              {appointment.status === "pending" && activeTab === "current" && (
+                                <>
+                                  <Button className="gap-1">
+                                    <CalendarIcon className="h-4 w-4" />
+                                    Check Availability
+                                  </Button>
+                                  <Button variant="outline" className="gap-1">
+                                    <AlertCircle className="h-4 w-4" />
+                                    Cancel Request
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
