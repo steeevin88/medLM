@@ -62,10 +62,11 @@ export async function createPatient(userId: string, patientData: PatientData) {
 
     let result;
     if (existingPatient) {
-      // Update existing patient
+      // Update existing patient - remove id from data when updating
+      const { id, ...updateData } = input;
       result = await prisma.patient.update({
         where: { id: userId },
-        data: input,
+        data: updateData,
       });
     } else {
       // Create new patient
