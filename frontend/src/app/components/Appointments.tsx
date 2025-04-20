@@ -131,7 +131,7 @@ export default function Appointments() {
     }
   ];
 
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const [activeTab, setActiveTab] = useState('current');
 
   const getAppointmentTypeIcon = (type: string) => {
     switch(type) {
@@ -143,21 +143,6 @@ export default function Appointments() {
         return <Phone className="h-4 w-4 text-amber-500" />;
       default: 
         return <MapPin className="h-4 w-4 text-blue-500" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case "confirmed": 
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Confirmed</Badge>;
-      case "pending": 
-        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pending</Badge>;
-      case "completed": 
-        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Completed</Badge>;
-      case "cancelled": 
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Cancelled</Badge>;
-      default: 
-        return <Badge>Unknown</Badge>;
     }
   };
 
@@ -176,14 +161,12 @@ export default function Appointments() {
 
   const getAppointmentList = (type: string) => {
     switch(type) {
-      case "upcoming": 
-        return appointments.upcoming;
+      case "current": 
+        return [...appointments.upcoming, ...appointments.requested];
       case "past": 
         return appointments.past;
-      case "requested": 
-        return appointments.requested;
       default: 
-        return appointments.upcoming;
+        return [...appointments.upcoming, ...appointments.requested];
     }
   };
 
@@ -199,11 +182,10 @@ export default function Appointments() {
         </CardDescription>
       </CardHeader>
       <CardContent className="pb-6">
-        <Tabs defaultValue="upcoming" onValueChange={setActiveTab}>
+        <Tabs defaultValue="current" onValueChange={setActiveTab}>
           <div className="flex justify-between items-center mb-4">
             <TabsList>
-              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-              <TabsTrigger value="requested">Requested</TabsTrigger>
+              <TabsTrigger value="current">Current</TabsTrigger>
               <TabsTrigger value="past">Past</TabsTrigger>
               <TabsTrigger value="labs">Recommended Labs</TabsTrigger>
             </TabsList>
@@ -213,7 +195,7 @@ export default function Appointments() {
             </Button>
           </div>
 
-          {["upcoming", "requested", "past"].map((tabValue) => (
+          {["current", "past"].map((tabValue) => (
             <TabsContent key={tabValue} value={tabValue} className="space-y-4">
               {getAppointmentList(tabValue).length === 0 ? (
                 <Card>
@@ -223,11 +205,9 @@ export default function Appointments() {
                     </div>
                     <h3 className="text-lg font-medium text-gray-900 mb-1">No {tabValue} appointments</h3>
                     <p className="text-gray-500 mb-4">
-                      {tabValue === "upcoming" 
-                        ? "You don't have any upcoming appointments scheduled." 
-                        : tabValue === "requested"
-                          ? "You haven't requested any appointments yet."
-                          : "You don't have any past appointments."}
+                      {tabValue === "current" 
+                        ? "You don't have any current or requested appointments." 
+                        : "You don't have any past appointments."}
                     </p>
                     {tabValue !== "past" && (
                       <Button>Schedule an appointment</Button>
@@ -238,65 +218,92 @@ export default function Appointments() {
                 getAppointmentList(tabValue).map((appointment) => (
                   <Card key={appointment.id} className="overflow-hidden">
                     <CardContent className="p-0">
-                      <div className="flex flex-col md:flex-row">
-                        <div className="p-4 md:w-1/3 bg-blue-50 flex flex-col justify-center">
-                          <div className="flex items-center gap-2 mb-1">
-                            {getAppointmentTypeIcon(appointment.type)}
-                            <span className="text-sm text-blue-700 capitalize">
-                              {appointment.type} Appointment
-                            </span>
-                          </div>
-                          <h3 className="font-medium text-lg mb-1">{appointment.doctorName}</h3>
-                          <p className="text-sm text-gray-600 mb-3">{appointment.specialty}</p>
-                          
-                          <div className="flex items-center gap-2 text-gray-700 mb-1">
-                            <CalendarIcon className="h-4 w-4" />
-                            <span className="text-sm">{appointment.date}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-700">
-                            <Clock className="h-4 w-4" />
-                            <span className="text-sm">{appointment.time}</span>
+                      <div className="relative">
+                        {/* Status ribbon */}
+                        <div className="absolute top-0 right-0 z-10">
+                          <div className={`
+                            px-4 py-1 text-xs font-medium uppercase tracking-wider
+                            ${appointment.status === 'confirmed' ? 'bg-green-500 text-white' : 
+                              appointment.status === 'pending' ? 'bg-amber-500 text-white' : 
+                              appointment.status === 'completed' ? 'bg-gray-500 text-white' : 
+                              appointment.status === 'cancelled' ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'}
+                          `}>
+                            {appointment.status}
                           </div>
                         </div>
                         
-                        <div className="p-4 md:w-2/3">
-                          <div className="flex justify-between mb-4">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-600">Patient: {user?.fullName || user?.username || "User"}</span>
+                        <div className="flex flex-col md:flex-row">
+                          <div className="p-4 md:w-1/3 bg-blue-50 flex flex-col justify-center">
+                            <div className="flex items-center gap-2 mb-1">
+                              {getAppointmentTypeIcon(appointment.type)}
+                              <span className="text-sm text-blue-700 capitalize">
+                                {appointment.type} Appointment
+                              </span>
                             </div>
-                            {getStatusBadge(appointment.status)}
+                            <h3 className="font-medium text-lg mb-1">{appointment.doctorName}</h3>
+                            <p className="text-sm text-gray-600 mb-3">{appointment.specialty}</p>
+                            
+                            <div className="flex items-center gap-2 text-gray-700 mb-1">
+                              <CalendarIcon className="h-4 w-4" />
+                              <span className="text-sm">{appointment.date}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <Clock className="h-4 w-4" />
+                              <span className="text-sm">{appointment.time}</span>
+                            </div>
                           </div>
                           
-                          <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-1">Location</h4>
-                            <p className="text-sm text-gray-600">{appointment.location}</p>
-                            {appointment.address && (
-                              <p className="text-sm text-gray-600">{appointment.address}</p>
+                          <div className="p-4 md:w-2/3">
+                            <div className="flex justify-between mb-4">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-gray-400" />
+                                <span className="text-sm text-gray-600">Patient: {user?.fullName || user?.username || "User"}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="mb-4">
+                              <h4 className="text-sm font-medium text-gray-700 mb-1">Location</h4>
+                              <p className="text-sm text-gray-600">{appointment.location}</p>
+                              {appointment.address && (
+                                <p className="text-sm text-gray-600">{appointment.address}</p>
+                              )}
+                            </div>
+                            
+                            {appointment.notes && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">Notes</h4>
+                                <p className="text-sm text-gray-600">{appointment.notes}</p>
+                              </div>
+                            )}
+                            
+                            {appointment.status === "confirmed" && activeTab === "current" && (
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                {appointment.type === "video" && (
+                                  <Button className="gap-1">
+                                    <Video className="h-4 w-4" />
+                                    Join Video Call
+                                  </Button>
+                                )}
+                                <Button variant="outline" className="gap-1">
+                                  <AlertCircle className="h-4 w-4" />
+                                  Reschedule
+                                </Button>
+                              </div>
+                            )}
+
+                            {appointment.status === "pending" && activeTab === "current" && (
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                <Button className="gap-1">
+                                  <CalendarIcon className="h-4 w-4" />
+                                  Check Availability
+                                </Button>
+                                <Button variant="outline" className="gap-1">
+                                  <AlertCircle className="h-4 w-4" />
+                                  Cancel Request
+                                </Button>
+                              </div>
                             )}
                           </div>
-                          
-                          {appointment.notes && (
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-700 mb-1">Notes</h4>
-                              <p className="text-sm text-gray-600">{appointment.notes}</p>
-                            </div>
-                          )}
-                          
-                          {appointment.status === "confirmed" && (
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              {appointment.type === "video" && (
-                                <Button className="gap-1">
-                                  <Video className="h-4 w-4" />
-                                  Join Video Call
-                                </Button>
-                              )}
-                              <Button variant="outline" className="gap-1">
-                                <AlertCircle className="h-4 w-4" />
-                                Reschedule
-                              </Button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -304,9 +311,9 @@ export default function Appointments() {
                 ))
               )}
               
-              {activeTab !== "past" && getAppointmentList(tabValue).length > 0 && (
+              {activeTab === "current" && getAppointmentList(tabValue).length > 0 && (
                 <Button variant="outline" className="w-full">
-                  {activeTab === "upcoming" ? "Manage Appointments" : "Submit New Request"}
+                  Manage Appointments
                 </Button>
               )}
             </TabsContent>
