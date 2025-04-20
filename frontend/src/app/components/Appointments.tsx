@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,15 +20,15 @@ import { toast } from "@/components/ui/use-toast";
 // Frontend Appointment type (used for rendering)
 interface Appointment {
   id: string;
-  doctorName: string; // Note: API might return nested doctor object
-  specialty: string;  // Note: API might return nested doctor object
-  date: string;      // Note: API might return Date object
+  doctorName: string;
+  specialty: string;
+  date: string;
   time: string;
   location: string;
   address?: string;
-  type: string;      // Note: API might return AppointmentType enum
+  type: string;
   notes: string;
-  status: string;     // Note: API might return AppointmentStatus enum
+  status: string;
   isAnonymous: boolean;
 }
 
@@ -36,63 +36,14 @@ interface Appointment {
 interface LabTest {
   id: string;
   testName: string;
-  date: string;      // Note: API might return Date object
+  date: string;
   time: string;
   location: string;
   address?: string;
-  status: string;     // Note: API might return LabTestStatus enum
+  status: string;
   reason: string;
   orderedBy: string;
   isAnonymous: boolean;
-}
-
-// Type matching the structure returned by GET /api/appointments
-// Adjust based on the actual include/select in your API route
-interface ApiAppointment {
-  id: string;
-  date: string | Date; // API might send string or Date
-  time: string;
-  location: string;
-  address?: string;
-  notes?: string;
-  type: string; // Should match AppointmentType enum values
-  status: string; // Should match AppointmentStatus enum values
-  isAnonymous: boolean;
-  specialtyType?: string; // Included from schema
-  patientId: string;
-  doctorId: string;
-  conversationId?: string;
-  conversation?: { // Based on include in GET /api/appointments
-    id: string;
-    messages?: { createdAt: string | Date }[];
-  } | null;
-  doctor?: { // Based on include in GET /api/appointments
-    id: string;
-    firstName?: string | null;
-    lastName?: string | null;
-    specialization?: string | null;
-  } | null;
-  // Add other fields returned by your API if needed
-}
-
-// Type matching the structure returned by GET /api/labs
-interface ApiLabTest {
-  id: string;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-  testName: string;
-  date: string | Date;
-  time: string;
-  location: string;
-  address?: string | null;
-  reason?: string | null;
-  status: string; // Should match LabTestStatus enum
-  isAnonymous: boolean;
-  results?: string | null;
-  patientId: string;
-  orderedBy: string;
-  obfuscatedUserId?: string | null;
-  // Add other fields returned by your API if needed
 }
 
 type AppointmentOrLab = Appointment | LabTest;
@@ -104,8 +55,9 @@ export default function Appointments() {
   const [chatMessages, setChatMessages] = useState<{[key: string]: {sender: 'user' | 'doctor', message: string, timestamp: string}[]}>({});
   const [labModalOpen, setLabModalOpen] = useState(false);
   const [newAppointmentModalOpen, setNewAppointmentModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('upcoming');
 
-  // State for the Schedule Lab modal form
+  // Form state for lab test form
   const [labTestType, setLabTestType] = useState<string>("");
   const [labDate, setLabDate] = useState<string>("");
   const [labTime, setLabTime] = useState<string>("");
@@ -115,7 +67,7 @@ export default function Appointments() {
   const [labLocation, setLabLocation] = useState<string>("");
   const [labOrderedBy, setLabOrderedBy] = useState<string>("");
 
-  // State for the Schedule Appointment modal form
+  // Form state for appointment form
   const [appointmentType, setAppointmentType] = useState<string>("");
   const [appointmentSpecialty, setAppointmentSpecialty] = useState<string>("");
   const [appointmentDoctorId, setAppointmentDoctorId] = useState<string>("sample-doctor-id");
@@ -127,23 +79,124 @@ export default function Appointments() {
   const [appointmentIsAnonymous, setAppointmentIsAnonymous] = useState<boolean>(false);
   const [isSubmittingAppointment, setIsSubmittingAppointment] = useState<boolean>(false);
 
-  // Placeholder for fetched data (replace with actual fetching logic)
-  const [appointmentsData, setAppointmentsData] = useState<{
-    upcoming: Appointment[];
-    past: Appointment[];
-    requested: Appointment[];
-    labs: LabTest[];
-  }>({ upcoming: [], past: [], requested: [], labs: [] });
-
-  const [activeTab, setActiveTab] = useState('upcoming');
+  // Hardcoded data for appointments and labs
+  const hardcodedData = {
+    upcoming: [
+      {
+        id: "upcoming-1",
+        doctorName: "Dr. Sarah Johnson",
+        specialty: "Cardiologist",
+        date: "June 15, 2025",
+        time: "10:30 AM",
+        location: "Heart Health Clinic",
+        address: "123 Medical Center Blvd.",
+        type: "IN_PERSON",
+        notes: "Annual heart checkup",
+        status: "CONFIRMED",
+        isAnonymous: false
+      },
+      {
+        id: "upcoming-2",
+        doctorName: "Dr. Michael Chen",
+        specialty: "Dermatologist",
+        date: "June 22, 2025",
+        time: "2:15 PM",
+        location: "Online",
+        type: "VIDEO",
+        notes: "Follow-up on skin condition",
+        status: "CONFIRMED",
+        isAnonymous: true
+      }
+    ],
+    past: [
+      {
+        id: "past-1",
+        doctorName: "Dr. Emily Roberts",
+        specialty: "General Practitioner",
+        date: "May 5, 2023",
+        time: "9:00 AM",
+        location: "Family Health Center",
+        address: "456 Wellness Way",
+        type: "IN_PERSON",
+        notes: "Regular checkup",
+        status: "COMPLETED",
+        isAnonymous: false
+      },
+      {
+        id: "past-2",
+        doctorName: "Dr. James Wilson",
+        specialty: "Orthopedist",
+        date: "April 18, 2023",
+        time: "11:45 AM",
+        location: "Phone Consultation",
+        type: "PHONE",
+        notes: "Discuss knee pain",
+        status: "COMPLETED",
+        isAnonymous: true
+      }
+    ],
+    requested: [
+      {
+        id: "requested-1",
+        doctorName: "Dr. Lisa Martinez",
+        specialty: "Neurologist",
+        date: "Pending",
+        time: "Pending",
+        location: "Neurology Partners",
+        address: "789 Brain Ave.",
+        type: "IN_PERSON",
+        notes: "Consultation for headaches",
+        status: "REQUESTED",
+        isAnonymous: true
+      }
+    ],
+    labs: [
+      {
+        id: "lab-1",
+        testName: "Complete Blood Count",
+        date: "June 30, 2025",
+        time: "8:00 AM",
+        location: "MedLab Testing Center",
+        address: "456 Health Pkwy",
+        status: "SCHEDULED",
+        reason: "Annual checkup",
+        orderedBy: "Dr. Sarah Johnson",
+        isAnonymous: true
+      },
+      {
+        id: "lab-2",
+        testName: "Lipid Panel",
+        date: "July 5, 2025",
+        time: "9:30 AM",
+        location: "MedLab Testing Center",
+        address: "456 Health Pkwy",
+        status: "SCHEDULED",
+        reason: "Cholesterol monitoring",
+        orderedBy: "Dr. Michael Chen",
+        isAnonymous: false
+      },
+      {
+        id: "lab-3",
+        testName: "Urinalysis",
+        date: "May 15, 2023",
+        time: "10:15 AM",
+        location: "City Hospital Lab",
+        address: "789 Hospital Dr.",
+        status: "COMPLETED",
+        reason: "Kidney function test",
+        orderedBy: "Dr. Emily Roberts",
+        isAnonymous: false
+      }
+    ]
+  };
 
   const getAppointmentTypeIcon = (type: string) => {
     switch(type) {
-      case "in-person": 
+      case "IN_PERSON": 
         return <MapPin className="h-4 w-4 text-blue-500" />;
-      case "video": 
+      case "VIDEO": 
         return <Video className="h-4 w-4 text-green-500" />;
-      case "phone": 
+      case "PHONE": 
         return <Phone className="h-4 w-4 text-amber-500" />;
       default: 
         return <MapPin className="h-4 w-4 text-blue-500" />;
@@ -152,15 +205,15 @@ export default function Appointments() {
 
   const getStatusBadge = (status: string) => {
     switch(status) {
-      case "confirmed": 
+      case "CONFIRMED": 
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Confirmed</Badge>;
-      case "pending": 
+      case "REQUESTED": 
         return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pending</Badge>;
-      case "completed": 
+      case "COMPLETED": 
         return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Completed</Badge>;
-      case "cancelled": 
+      case "CANCELLED": 
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Cancelled</Badge>;
-      case "scheduled": 
+      case "SCHEDULED": 
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Scheduled</Badge>;
       default: 
         return <Badge>Unknown</Badge>;
@@ -168,12 +221,11 @@ export default function Appointments() {
   };
 
   const getAppointmentList = (type: string): AppointmentOrLab[] => {
-    // Use fetched data instead of dummy data
     switch(type) {
-      case "upcoming": return appointmentsData.upcoming;
-      case "past": return appointmentsData.past;
-      case "requested": return appointmentsData.requested;
-      case "labs": return appointmentsData.labs;
+      case "upcoming": return hardcodedData.upcoming;
+      case "past": return hardcodedData.past;
+      case "requested": return hardcodedData.requested;
+      case "labs": return hardcodedData.labs;
       default: return [];
     }
   };
@@ -192,124 +244,38 @@ export default function Appointments() {
     ];
     
     setChatMessages({ ...chatMessages, [appointmentId]: updatedMessages });
+    setNewMessage("");
     
-    try {
-      // Find matching appointment from our local data
-      let selectedAppointment: AppointmentOrLab | undefined;
-      for (const tab of ["upcoming", "requested", "past"]) {
-        selectedAppointment = getAppointmentList(tab).find(a => a.id === appointmentId);
-        if (selectedAppointment) break;
-      }
+    // Simulate doctor response
+    setTimeout(() => {
+      const doctorResponse = { 
+        sender: 'doctor' as const, 
+        message: "Thank you for your message. I've received it and will respond promptly. Your privacy is fully protected.", 
+        timestamp: formattedTime 
+      };
       
-      if (!selectedAppointment || !isAppointment(selectedAppointment)) {
-        throw new Error("Appointment not found");
-      }
-      
-      // Send message to the API
-      const response = await fetch('/api/chat/message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          appointmentId: appointmentId,
-          content: newMessage,
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-      
-      // Clear input field
-      setNewMessage("");
-      
-      // For demo purposes, simulate doctor response
-      // In a real app, the doctor would receive the message and respond later
-      setTimeout(() => {
-        const doctorResponse = { 
-          sender: 'doctor' as const, 
-          message: "Thank you for your message. I've received it and will respond promptly. Your privacy is fully protected.", 
-          timestamp: formattedTime 
-        };
-        
-        setChatMessages(prev => ({
-          ...prev,
-          [appointmentId]: [...(prev[appointmentId] || []), doctorResponse]
-        }));
-        
-        // In a real app, this would be sent by the doctor, not simulated
-      }, 1500);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // Revert the optimistic update if there was an error
-      setChatMessages(prev => ({ 
-        ...prev,
-        [appointmentId]: newMessages
-      }));
-      
-      // Show error to user (you could add a toast notification here)
-      alert('Failed to send message. Please try again.');
-    }
-  };
-
-  // Load existing messages when a chat is opened
-  const loadMessages = async (appointmentId: string) => {
-    try {
-      // Find matching appointment from our local data
-      let selectedAppointment: AppointmentOrLab | undefined;
-      for (const tab of ["upcoming", "requested", "past"]) {
-        selectedAppointment = getAppointmentList(tab).find(a => a.id === appointmentId);
-        if (selectedAppointment) break;
-      }
-      
-      if (!selectedAppointment || !isAppointment(selectedAppointment)) {
-        throw new Error("Appointment not found");
-      }
-      
-      // First check if we have a conversation for this appointment
-      const appointmentResponse = await fetch(`/api/appointments?appointmentId=${appointmentId}`, {
-        method: 'GET',
-      });
-      
-      if (!appointmentResponse.ok) {
-        throw new Error('Failed to fetch appointment details');
-      }
-      
-      const appointmentData = await appointmentResponse.json();
-      const conversationId = appointmentData.appointment?.conversation?.id;
-      
-      if (!conversationId) {
-        // No conversation exists yet, nothing to load
-        return;
-      }
-      
-      // Fetch messages for this conversation
-      const response = await fetch(`/api/chat/message?conversationId=${conversationId}`, {
-        method: 'GET',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch messages');
-      }
-      
-      const data = await response.json();
-      
-      // Format messages for the UI
-      const formattedMessages = data.messages.map((msg: { sentByPatient: boolean; content: string; createdAt: string }) => ({
-        sender: msg.sentByPatient ? 'user' as const : 'doctor' as const,
-        message: msg.content,
-        timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }));
-      
-      // Update state with fetched messages
       setChatMessages(prev => ({
         ...prev,
-        [appointmentId]: formattedMessages
+        [appointmentId]: [...(prev[appointmentId] || []), doctorResponse]
       }));
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      // Show error to user (you could add a toast notification here)
+    }, 1500);
+  };
+
+  const loadMessages = async (appointmentId: string) => {
+    // For demo, simulate loading messages
+    if (!chatMessages[appointmentId]) {
+      const initialMessages = [
+        { 
+          sender: 'doctor' as const, 
+          message: "Hello! How can I help you today?", 
+          timestamp: "9:30" 
+        }
+      ];
+      
+      setChatMessages(prev => ({
+        ...prev,
+        [appointmentId]: initialMessages
+      }));
     }
   };
 
@@ -320,57 +286,12 @@ export default function Appointments() {
     }
   };
   
-  const scheduleLab = async (e: React.FormEvent) => {
+  const scheduleLab = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || isSubmittingLab) return;
-
-    console.log("[DEBUG] Starting scheduleLab...");
-    const labData = {
-      testName: labTestType,
-      date: labDate,
-      time: labTime,
-      location: labLocation,
-      reason: labReason,
-      orderedBy: labOrderedBy,
-      isAnonymous: labIsAnonymous
-    };
-    console.log("[DEBUG] Lab form data:", labData);
-
     setIsSubmittingLab(true);
 
-    // Basic validation (add more as needed)
-    if (!labTestType || !labDate || !labTime || !labLocation || !labOrderedBy) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required lab test details (type, date, time, location, ordered by).",
-        variant: "destructive",
-      });
-      setIsSubmittingLab(false);
-      return;
-    }
-
-    try {
-      console.log("[DEBUG] Sending POST request to /api/labs...");
-      const response = await fetch('/api/labs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(labData),
-      });
-
-      const responseData = await response.json();
-      console.log("[DEBUG] Lab creation response:", responseData);
-      
-      // Save the created lab test to localStorage for debugging
-      if (responseData.labTest) {
-        window.localStorage.setItem('lastCreatedLabTest', JSON.stringify(responseData.labTest));
-      }
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to schedule lab test');
-      }
-
+    // Simulate submission delay
+    setTimeout(() => {
       toast({
         title: "Lab Test Scheduled",
         description: "Your lab test request has been submitted.",
@@ -385,83 +306,22 @@ export default function Appointments() {
       setLabIsAnonymous(false);
       setLabLocation("");
       setLabOrderedBy("");
-      
-      // Refresh the appointments/labs list
-      console.log("[DEBUG] Refreshing data after lab creation");
-      await fetchAppointmentsAndLabs();
-
-    } catch (error) {
-      console.error('[DEBUG] Error scheduling lab test:', error);
-      toast({
-        title: "Error Scheduling Lab Test",
-        description: error instanceof Error ? error.message : "An unexpected error occurred.",
-        variant: "destructive",
-      });
-    } finally {
       setIsSubmittingLab(false);
-    }
+    }, 1000);
   };
   
-  const scheduleAppointment = async (e: React.FormEvent) => {
+  const scheduleAppointment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || isSubmittingAppointment) return;
-
-    console.log("[DEBUG] Starting scheduleAppointment...");
-    const appointmentData = {
-      doctorId: appointmentDoctorId,
-      date: appointmentDate,
-      time: appointmentTime,
-      location: appointmentLocation,
-      address: appointmentAddress || undefined,
-      type: appointmentType,
-      notes: appointmentNotes || undefined,
-      specialtyType: appointmentSpecialty,
-      isAnonymous: appointmentIsAnonymous,
-    };
-    console.log("[DEBUG] Appointment form data:", appointmentData);
-
     setIsSubmittingAppointment(true);
 
-    // Basic validation
-    if (!appointmentType || !appointmentSpecialty || !appointmentDate || !appointmentTime || !appointmentLocation) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required appointment details (type, specialty, date, time, location).",
-        variant: "destructive",
-      });
-      setIsSubmittingAppointment(false);
-      return;
-    }
-
-    try {
-      console.log("[DEBUG] Sending POST request to /api/appointments...");
-      const response = await fetch('/api/appointments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(appointmentData),
-      });
-
-      const responseData = await response.json();
-      console.log("[DEBUG] Appointment creation response:", responseData);
-      
-      // Save the created appointment to localStorage for debugging
-      if (responseData.appointment) {
-        window.localStorage.setItem('lastCreatedAppointment', JSON.stringify(responseData.appointment));
-      }
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to schedule appointment');
-      }
-
+    // Simulate submission delay
+    setTimeout(() => {
       toast({
         title: "Appointment Scheduled",
         description: "Your appointment request has been submitted.",
       });
 
       setNewAppointmentModalOpen(false);
-      
       // Reset form state
       setAppointmentType("");
       setAppointmentSpecialty("");
@@ -471,21 +331,8 @@ export default function Appointments() {
       setAppointmentAddress("");
       setAppointmentNotes("");
       setAppointmentIsAnonymous(false);
-      
-      // Refresh the appointments/labs list
-      console.log("[DEBUG] Refreshing data after appointment creation");
-      await fetchAppointmentsAndLabs();
-
-    } catch (error) {
-      console.error('[DEBUG] Error scheduling appointment:', error);
-      toast({
-        title: "Error Scheduling Appointment",
-        description: error instanceof Error ? error.message : "An unexpected error occurred.",
-        variant: "destructive",
-      });
-    } finally {
       setIsSubmittingAppointment(false);
-    }
+    }, 1000);
   };
 
   // Helper to check if an item is a lab test
@@ -497,274 +344,6 @@ export default function Appointments() {
   const isAppointment = (item: AppointmentOrLab): item is Appointment => {
     return 'doctorName' in item;
   };
-
-  // Implement fetch function with proper error handling and data mapping
-  const fetchAppointmentsAndLabs = async () => {
-    console.log("[DEBUG] Starting fetchAppointmentsAndLabs...");
-    try {
-      // Fetch appointments
-      console.log("[DEBUG] Fetching appointments from /api/appointments...");
-      const appointmentsRes = await fetch('/api/appointments');
-      let appointmentsData: ApiAppointment[] = [];
-      
-      if (appointmentsRes.ok) {
-        const appointmentsResult = await appointmentsRes.json();
-        console.log("[DEBUG] Appointments API response:", appointmentsResult);
-        // Use the defined ApiAppointment type
-        appointmentsData = appointmentsResult.appointments || [];
-        console.log("[DEBUG] Parsed appointments data:", appointmentsData);
-      } else {
-        console.error(`[DEBUG] Failed to fetch appointments: ${appointmentsRes.statusText}`);
-        // Try to get error details
-        try {
-          const errorDetails = await appointmentsRes.json();
-          console.error("[DEBUG] Appointments API error details:", errorDetails);
-        } catch {
-          // Using empty catch block is fine
-          console.error("[DEBUG] Could not parse error response from appointments API");
-        }
-      }
-
-      // Fetch lab tests
-      console.log("[DEBUG] Fetching lab tests from /api/labs...");
-      const labsRes = await fetch('/api/labs');
-      let labsData: ApiLabTest[] = [];
-      
-      if (labsRes.ok) {
-        const labsResult = await labsRes.json();
-        console.log("[DEBUG] Labs API response:", labsResult);
-        // Get the lab tests from the response
-        labsData = labsResult.labTests || [];
-        console.log("[DEBUG] Parsed lab tests data:", labsData);
-      } else {
-        console.error(`[DEBUG] Failed to fetch lab tests: ${labsRes.statusText}`);
-        // Try to get error details
-        try {
-          const errorDetails = await labsRes.json();
-          console.error("[DEBUG] Labs API error details:", errorDetails);
-        } catch {
-          // Using empty catch block is fine
-          console.error("[DEBUG] Could not parse error response from labs API");
-        }
-      }
-
-      // If both requests failed, show a toast
-      if (!appointmentsRes.ok && !labsRes.ok) {
-        toast({
-          title: "Error Fetching Data",
-          description: "Could not load appointments and labs. Please try again later.",
-          variant: "destructive",
-        });
-        return; // Exit without updating state
-      }
-
-      // Process fetched appointments
-      const now = new Date();
-      const upcoming: Appointment[] = [];
-      const past: Appointment[] = [];
-      const requested: Appointment[] = [];
-
-      appointmentsData.forEach(appt => {
-        // Map ApiAppointment to the frontend Appointment type
-        const frontendAppt: Appointment = {
-          id: String(appt.id),
-          doctorName: `${appt.doctor?.firstName || ''} ${appt.doctor?.lastName || ''}`.trim() || 'Unknown Doctor',
-          specialty: appt.doctor?.specialization || appt.specialtyType || 'Unknown Specialty',
-          date: typeof appt.date === 'string' ? appt.date : new Date(appt.date).toLocaleDateString(), // Format date
-          time: appt.time,
-          location: appt.location,
-          address: appt.address,
-          type: appt.type,
-          notes: appt.notes || '',
-          status: appt.status,
-          isAnonymous: appt.isAnonymous,
-        };
-
-        // Categorize by status and date
-        if (appt.status === 'REQUESTED') {
-          requested.push(frontendAppt);
-        } else if (appt.status === 'COMPLETED' || appt.status === 'CANCELLED') {
-          past.push(frontendAppt);
-        } else {
-          const apptDate = new Date(appt.date);
-          if (!isNaN(apptDate.getTime())) { // Check if date is valid
-            if (apptDate >= now) {
-              upcoming.push(frontendAppt);
-            } else {
-              past.push(frontendAppt);
-            }
-          } else {
-            console.warn("Invalid date found for appointment:", appt.id, appt.date);
-            past.push(frontendAppt); // Default to past if date is invalid
-          }
-        }
-      });
-
-      // Process fetched labs - map from API format to frontend format
-      const labs: LabTest[] = labsData.map(lab => ({
-        id: String(lab.id),
-        testName: lab.testName,
-        date: typeof lab.date === 'string' ? lab.date : new Date(lab.date).toLocaleDateString(),
-        time: lab.time,
-        location: lab.location,
-        address: lab.address || undefined, // Convert null to undefined to match LabTest type
-        status: lab.status,
-        reason: lab.reason || '',
-        orderedBy: lab.orderedBy,
-        isAnonymous: lab.isAnonymous,
-      }));
-
-      console.log("Categorized data:", { upcoming, past, requested, labs });
-
-      // Update state with the processed data
-      setAppointmentsData({
-        upcoming,
-        past,
-        requested,
-        labs,
-      });
-
-    } catch (error) {
-      console.error("Error fetching appointments and labs:", error);
-      toast({
-        title: "Error Fetching Data",
-        description: "Could not load appointments and labs. Please try again later.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Add a function to fetch available doctors
-  const fetchAvailableDoctors = async () => {
-    try {
-      console.log("[DEBUG] Fetching available doctors...");
-      const response = await fetch('/api/doctors');
-      if (response.ok) {
-        const data = await response.json();
-        console.log("[DEBUG] Available doctors:", data.doctors);
-        // If we have doctors, update the doctor ID
-        if (data.doctors && data.doctors.length > 0) {
-          setAppointmentDoctorId(data.doctors[0].id);
-        }
-      } else {
-        console.error("[DEBUG] Failed to fetch doctors:", response.statusText);
-      }
-    } catch (error) {
-      console.error("[DEBUG] Error fetching doctors:", error);
-    }
-  };
-
-  // Call fetchAppointmentsAndLabs when component mounts
-  useEffect(() => {
-    fetchAppointmentsAndLabs();
-    fetchAvailableDoctors();
-  }, []);
-
-  // Replace the useEffect for dummy data to always display the recently created lab test
-  useEffect(() => {
-    // Debug: Directly check and display the lab test that was just created
-    const debugMode = true;
-    
-    if (debugMode && window.localStorage.getItem('lastCreatedLabTest')) {
-      try {
-        const lastLabTest = JSON.parse(window.localStorage.getItem('lastCreatedLabTest') || '{}');
-        console.log('[DEBUG] Found last created lab test in localStorage:', lastLabTest);
-        
-        // Force display the lab test
-        const formattedLabTest: LabTest = {
-          id: lastLabTest.id || 'debug-id',
-          testName: lastLabTest.testName || 'Debug Test',
-          date: lastLabTest.date 
-            ? (typeof lastLabTest.date === 'string' 
-                ? lastLabTest.date 
-                : new Date(lastLabTest.date).toLocaleDateString())
-            : new Date().toLocaleDateString(),
-          time: lastLabTest.time || '12:00',
-          location: lastLabTest.location || 'Debug Location',
-          address: lastLabTest.address,
-          status: lastLabTest.status || 'SCHEDULED',
-          reason: lastLabTest.reason || 'Debug reason',
-          orderedBy: lastLabTest.orderedBy || 'Debug Doctor',
-          isAnonymous: !!lastLabTest.isAnonymous,
-        };
-        
-        // Add this lab test to the existing list if it's not already there
-        if (!appointmentsData.labs.some(lab => lab.id === formattedLabTest.id)) {
-          console.log('[DEBUG] Adding forced lab test to display:', formattedLabTest);
-          setAppointmentsData(prev => ({
-            ...prev,
-            labs: [...prev.labs, formattedLabTest],
-          }));
-        }
-      } catch (err) {
-        console.error('[DEBUG] Error parsing last created lab test:', err);
-      }
-    }
-    
-    // If no data at all, add dummy data (from previous code)
-    else if (appointmentsData.upcoming.length === 0 &&
-        appointmentsData.past.length === 0 &&
-        appointmentsData.requested.length === 0 &&
-        appointmentsData.labs.length === 0) {
-      
-      console.log("No data from API, adding dummy data for preview");
-      
-      // Example dummy data - this will help visualize UI until backend is fully connected
-      setAppointmentsData({
-        upcoming: [{
-          id: "dummy-1",
-          doctorName: "Dr. Sarah Johnson",
-          specialty: "Cardiologist",
-          date: "June 15, 2025",
-          time: "10:30 AM",
-          location: "Heart Health Clinic",
-          address: "123 Medical Center Blvd.",
-          type: "IN_PERSON",
-          notes: "Annual heart checkup",
-          status: "CONFIRMED",
-          isAnonymous: false
-        }],
-        past: [{
-          id: "dummy-3",
-          doctorName: "Dr. Emily Roberts",
-          specialty: "General Practitioner",
-          date: "May 5, 2023",
-          time: "9:00 AM",
-          location: "Family Health Center",
-          address: "456 Wellness Way",
-          type: "IN_PERSON",
-          notes: "Regular checkup",
-          status: "COMPLETED",
-          isAnonymous: false
-        }],
-        requested: [{
-          id: "dummy-6",
-          doctorName: "Dr. Lisa Martinez",
-          specialty: "Neurologist",
-          date: "Pending",
-          time: "Pending",
-          location: "Neurology Partners",
-          address: "789 Brain Ave.",
-          type: "IN_PERSON",
-          notes: "Consultation for headaches",
-          status: "REQUESTED",
-          isAnonymous: true
-        }],
-        labs: [{
-          id: "dummy-lab-101",
-          testName: "Complete Blood Count",
-          date: "June 30, 2025",
-          time: "8:00 AM",
-          location: "MedLab Testing Center",
-          address: "456 Health Pkwy",
-          status: "SCHEDULED",
-          reason: "Annual checkup",
-          orderedBy: "Dr. Sarah Johnson",
-          isAnonymous: true
-        }]
-      });
-    }
-  }, [appointmentsData]);
 
   return (
     <Card className="h-full overflow-auto">
@@ -1077,9 +656,9 @@ export default function Appointments() {
                             </div>
                           )}
                           
-                          {isAppointment(appointment) && appointment.status === "confirmed" && tabValue !== "labs" && (
+                          {isAppointment(appointment) && appointment.status === "CONFIRMED" && tabValue !== "labs" && (
                             <div className="mt-4 flex flex-wrap gap-2">
-                              {appointment.type === "video" && (
+                              {appointment.type === "VIDEO" && (
                                 <Button className="gap-1">
                                   <Video className="h-4 w-4" />
                                   Join Video Call
