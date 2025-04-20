@@ -6,10 +6,12 @@ import React, { useEffect, useState } from 'react';
 import PatientNavigation from "../components/PatientNavigation";
 import PatientOnboarding from "../components/PatientOnboarding";
 import DocumentUpload from "../components/DocumentUpload";
-import PatientChat from "../components/PatientChat";
+import MedLMAssistantChat from "../components/MedLMAssistantChat";
 import HealthVitals from "../components/HealthVitals";
 import ActivityExercise from "../components/ActivityExercise";
 import Appointments from "../components/Appointments";
+import PatientPrescriptions from "../components/PatientPrescriptions";
+import SendDoctorReport from "../components/SendDoctorReport";
 import { Card, CardContent } from "@/components/ui/card";
 import { handleRoleRedirects } from "@/utils/roles";
 
@@ -25,7 +27,7 @@ export default function PatientPage() {
   const renderActiveTabContent = () => {
     switch(activeTab) {
       case 'chat':
-        return <PatientChat />;
+        return <MedLMAssistantChat />;
       case 'profile':
         return <PatientOnboarding />;
       case 'documents':
@@ -36,6 +38,10 @@ export default function PatientPage() {
         return <ActivityExercise />;
       case 'appointments':
         return <Appointments />;
+      case 'prescriptions':
+        return <PatientPrescriptions />;
+      case 'doctor-report':
+        return <SendDoctorReport />;
       case 'settings':
         return (
           <Card className="h-full">
@@ -48,7 +54,7 @@ export default function PatientPage() {
           </Card>
         );
       default:
-        return <PatientChat />;
+        return <MedLMAssistantChat />;
     }
   };
 
@@ -65,9 +71,9 @@ export default function PatientPage() {
 
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-6rem)]">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 min-h-[calc(100vh-6rem)] md:h-[calc(100vh-6rem)]">
         {/* Left sidebar with navigation */}
-        <div className="md:col-span-3 lg:col-span-2 h-auto md:h-full">
+        <div className="md:col-span-3 lg:col-span-2 mb-4 md:mb-0 md:h-full">
           <PatientNavigation
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -75,8 +81,8 @@ export default function PatientPage() {
         </div>
 
         {/* Main content area */}
-        <div className="md:col-span-9 lg:col-span-10 h-auto md:h-full overflow-hidden">
-          <div className="h-full overflow-hidden">
+        <div className="md:col-span-9 lg:col-span-10 flex-1 md:h-full overflow-auto">
+          <div className="h-full overflow-auto">
             {renderActiveTabContent()}
           </div>
         </div>

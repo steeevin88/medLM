@@ -4,11 +4,10 @@ import React from 'react';
 import Link from 'next/link';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { Button } from "@/components/ui/button";
-import { BellIcon } from "lucide-react";
 
 export default function Navbar() {
   return (
-    <header className="bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-md">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-md">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold">
           <svg
@@ -31,10 +30,6 @@ export default function Navbar() {
             </SignInButton>
           </SignedOut>
           <SignedIn>
-            <Button size="icon" variant="ghost" className="relative flex-shrink-0 text-white hover:text-white/80 hover:bg-blue-600/20">
-              <BellIcon className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">3</span>
-            </Button>
             <UserButton afterSignOutUrl="/" />
           </SignedIn>
         </div>

@@ -29,153 +29,6 @@ export async function updatePatientData(patientId: string, data: any) {
   });
 }
 
-export async function uploadDoctorData(doctor: any) {
-  return await prisma.doctor.create({
-    data: doctor,
-  });
-}
-
-export async function getDoctorData(doctorId: string) {
-  return await prisma.doctor.findUnique({
-    where: {
-      id: doctorId,
-    },
-  });
-}
-
-export async function updateDoctorData(doctorId: string, data: any) {
-  return await prisma.doctor.update({
-    where: {
-      id: doctorId,
-    },
-    data,
-  });
-}
-
-export async function createDoctor(userId: string, doctorData: DoctorData) {
-  try {
-    const requiredFields = ['sex', 'age', 'location', 'fieldOfStudy'] as const;
-    const missingFields = requiredFields.filter(field => doctorData[field] === undefined);
-
-    if (missingFields.length > 0) throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-
-    const input = {
-      id: userId,
-      sex: doctorData.sex as boolean,
-      age: doctorData.age as number,
-      location: doctorData.location as string,
-      fieldOfStudy: doctorData.fieldOfStudy as string,
-      firstName: doctorData.firstName,
-      lastName: doctorData.lastName,
-      email: doctorData.email,
-      specialization: doctorData.specialization,
-      yearsExperience: doctorData.yearsExperience,
-      licenseNumber: doctorData.licenseNumber,
-      hospital: doctorData.hospital,
-      bio: doctorData.bio,
-    };
-
-    const newDoctor = await prisma.doctor.create({
-      data: input,
-    });
-
-    return { success: true, doctor: newDoctor, error: null };
-  } catch (error) {
-    console.error("Error creating doctor profile:", error);
-    return { success: false, doctor: null, error: "Failed to create doctor profile" };
-  }
-}
-
-// Doctor report actions
-export async function getReportsForDoctor(doctorId: string) {
-  try {
-    const reports = await prisma.report.findMany({
-      where: {
-        doctorId,
-      },
-      include: {
-        obfuscatedUser: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return { reports, error: null };
-  } catch (error) {
-    console.error("Error fetching reports:", error);
-    return { reports: [], error: "Failed to fetch reports" };
-  }
-}
-
-export async function getReportById(reportId: string) {
-  try {
-    const report = await prisma.report.findUnique({
-      where: {
-        id: reportId,
-      },
-      include: {
-        obfuscatedUser: true,
-      },
-    });
-
-    return { report, error: null };
-  } catch (error) {
-    console.error("Error fetching report:", error);
-    return { report: null, error: "Failed to fetch report" };
-  }
-}
-
-export async function createReportWithObfuscatedUser(
-  report: any,
-  obfuscatedUser: any
-) {
-  try {
-    // Create the report first
-    const createdReport = await prisma.report.create({
-      data: {
-        ...report,
-        obfuscatedUser: {
-          create: obfuscatedUser,
-        },
-      },
-      include: {
-        obfuscatedUser: true,
-      },
-    });
-
-    return { success: true, report: createdReport, error: null };
-  } catch (error) {
-    console.error("Error creating report:", error);
-    return { success: false, report: null, error: "Failed to create report" };
-  }
-}
-
-export async function updateReportStatus(
-  reportId: string,
-  status: "PENDING" | "REVIEWED" | "RESPONDED"
-) {
-  try {
-    const updatedReport = await prisma.report.update({
-      where: {
-        id: reportId,
-      },
-      data: {
-        status,
-      },
-    });
-
-    return { success: true, report: updatedReport, error: null };
-  } catch (error) {
-    console.error("Error updating report status:", error);
-    return {
-      success: false,
-      report: null,
-      error: "Failed to update report status",
-    };
-  }
-}
-
 export async function createPatient(userId: string, patientData: PatientData) {
   try {
     const requiredFields = ['sex', 'age', 'height', 'weight', 'activityLevel'] as const;
@@ -202,13 +55,119 @@ export async function createPatient(userId: string, patientData: PatientData) {
       bloodPressure: patientData.bloodPressure,
     };
 
-    const newPatient = await prisma.patient.create({
-      data: input,
+    // Check if patient already exists
+    const existingPatient = await prisma.patient.findUnique({
+      where: { id: userId }
     });
 
-    return { success: true, patient: newPatient, error: null };
+    let result;
+    if (existingPatient) {
+      // Update existing patient - remove id from data when updating
+      const { id, ...updateData } = input;
+      result = await prisma.patient.update({
+        where: { id: userId },
+        data: updateData,
+      });
+    } else {
+      // Create new patient
+      result = await prisma.patient.create({
+        data: input,
+      });
+    }
+
+    return { success: true, patient: result, error: null };
   } catch (error) {
-    console.error("Error creating patient profile:", error);
-    return { success: false, patient: null, error: "Failed to create patient profile" };
+    console.error("Error creating/updating patient profile:", error);
+    return { success: false, patient: null, error: "Failed to create/update patient profile" };
+  }
+}
+
+export async function getPatientByUserId(userId: string) {
+  try {
+    const patient = await prisma.patient.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    return { success: true, patient, error: null };
+  } catch (error) {
+    console.error("Error fetching patient profile:", error);
+    return { success: false, patient: null, error: "Failed to fetch patient profile" };
+  }
+}
+
+export async function updateDataRequestStatus(requestId: string, status: 'APPROVED' | 'DENIED') {
+  try {
+    // First update the status of the request
+    const dataRequest = await prisma.dataRequest.update({
+      where: {
+        id: requestId,
+      },
+      data: {
+        status,
+        updatedAt: new Date()
+      },
+      include: {
+        report: {
+          include: {
+            obfuscatedUser: true
+          }
+        },
+        patient: true
+      }
+    });
+
+    // If approved, update the obfuscatedUser to include the requested field
+    if (status === 'APPROVED' && dataRequest.report?.obfuscatedUser) {
+      const field = dataRequest.field;
+      const patientId = dataRequest.patientId;
+
+      // Get the actual field value from the patient
+      const patient = await prisma.patient.findUnique({
+        where: { id: patientId },
+      });
+
+      if (patient && patient[field as keyof typeof patient] !== undefined) {
+        const fieldValue = patient[field as keyof typeof patient];
+
+        // Update the obfuscatedUser with the field value from the patient
+        await prisma.obfuscatedUser.update({
+          where: { id: dataRequest.report.obfuscatedUser.id },
+          data: { [field]: fieldValue }
+        });
+      }
+    }
+
+    return { success: true, request: dataRequest, error: null };
+  } catch (error) {
+    console.error("Error updating data request status:", error);
+    return { success: false, request: null, error: "Failed to update data request status" };
+  }
+}
+
+export async function getPatientFieldValue(patientId: string, field: string) {
+  try {
+    const patient = await prisma.patient.findUnique({
+      where: {
+        id: patientId,
+      },
+      select: {
+        [field]: true
+      }
+    });
+
+    if (!patient) {
+      return { success: false, value: null, error: "Patient not found" };
+    }
+
+    return {
+      success: true,
+      value: patient[field as keyof typeof patient],
+      error: null
+    };
+  } catch (error) {
+    console.error(`Error fetching patient ${field}:`, error);
+    return { success: false, value: null, error: `Failed to fetch patient ${field}` };
   }
 }

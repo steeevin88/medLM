@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -32,7 +32,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { createPatient } from "@/actions/user";
+import { createPatient, getPatientByUserId } from "@/actions/user";
 import {
   ActivityLevel,
   Allergy,
@@ -197,6 +197,9 @@ function mapMedications(medications: string[]): Medication[] {
 }
 
 export default function PatientOnboarding() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   const defaultValues: Partial<ProfileFormValues> = {
     sex: "male",
     age: undefined,
@@ -210,14 +213,87 @@ export default function PatientOnboarding() {
     activityLevel: "moderate",
     additionalInfo: "",
   };
+
   const { user, isLoaded } = useUser();
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
 
+  useEffect(() => {
+    async function fetchPatientData() {
+      if (!isLoaded || !user) return;
+
+      try {
+        const result = await getPatientByUserId(user.id);
+
+        if (result.success && result.patient) {
+          const patient = result.patient;
+          const sexValue = patient.sex ? "male" : "female";
+          let activityLevelValue = "moderate";
+          if (patient.activityLevel === "LOW") activityLevelValue = "sedentary";
+          else if (patient.activityLevel === "MEDIUM") activityLevelValue = "moderate";
+          else if (patient.activityLevel === "HIGH") activityLevelValue = "active";
+
+          let dietValue = "regular";
+          if (patient.diet && patient.diet.length > 0) {
+            const dietEnum = patient.diet[0];
+            if (dietEnum === "VEGETARIAN") dietValue = "vegetarian";
+            else if (dietEnum === "VEGAN") dietValue = "vegan";
+            else if (dietEnum === "KETO") dietValue = "keto";
+            else if (dietEnum === "LOW_CARB") dietValue = "lowcarb";
+            else if (dietEnum === "GLUTEN_FREE") dietValue = "glutenfree";
+            else if (dietEnum === "DAIRY_FREE") dietValue = "dairyfree";
+          }
+
+          const allergiesValue = patient.allergies?.map(allergy => {
+            switch (allergy) {
+              case "DAIRY": return "dairy";
+              case "EGGS": return "eggs";
+              case "GLUTEN": return "gluten";
+              case "PEANUTS": return "peanuts";
+              case "SOY": return "soy";
+              default: return "";
+            }
+          }).filter(Boolean) || [];
+
+          const medicationsValue = patient.medications?.map(medication => {
+            switch (medication) {
+              case "ANTIBIOTICS": return "antibiotics";
+              case "IBUPROFEN": return "painkillers";
+              case "BLOOD_PRESSURE_MEDICATION": return "bloodpressure";
+              case "INSULIN": return "diabetes";
+              default: return "other";
+            }
+          }) || [];
+
+          form.reset({
+            sex: sexValue as "male" | "female" | "other",
+            age: patient.age || undefined,
+            height: patient.height || undefined,
+            weight: patient.weight || undefined,
+            allergies: allergiesValue,
+            medications: medicationsValue,
+            medicalHistory: [],
+            additionalMedicalHistory: "",
+            diet: dietValue as any,
+            activityLevel: activityLevelValue as any,
+            additionalInfo: patient.additionalInfo || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching patient data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchPatientData();
+  }, [isLoaded, user, form]);
+
   function onSubmit(data: ProfileFormValues) {
     if (!isLoaded || !user) return;
+    setIsSubmitting(true);
 
     const patientData = {
       sex: data.sex === "male",
@@ -247,7 +323,23 @@ export default function PatientOnboarding() {
       })
       .catch((err) => {
         console.error("Error creating patient profile:", err);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
+  }
+
+  if (isLoading && isLoaded) {
+    return (
+      <Card className="h-full overflow-auto">
+        <CardHeader>
+          <CardTitle>Loading Your Health Profile</CardTitle>
+          <CardDescription>
+            Please wait while we load your information...
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
   }
 
   return (
@@ -557,8 +649,8 @@ export default function PatientOnboarding() {
               )}
             />
 
-            <Button type="submit" className="w-full">
-              Save Profile
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Profile"}
             </Button>
           </form>
         </Form>

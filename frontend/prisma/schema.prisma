@@ -36,62 +36,118 @@ model Patient {
   bloodPressure  String?
 
   // Relations
-  sentReports    Report[]  @relation("PatientReports")
+  sentReports   Report[]       @relation("PatientReports")
+  prescriptions Prescription[] @relation("PatientPrescriptions")
+  dataRequests  DataRequest[]  @relation("PatientDataRequests")
 }
 
 model Doctor {
-  id             String   @id @map("_id")
-  firstName      String?
-  lastName       String?
-  email          String?  @unique
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id        String   @id @map("_id")
+  firstName String?
+  lastName  String?
+  email     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  sex            Boolean
-  age            Int
-  location       String
-  fieldOfStudy   String
-  specialization String?
+  sex             Boolean
+  age             Int
+  location        String
+  fieldOfStudy    String
+  specialization  String?
   yearsExperience Int?
-  licenseNumber  String?
-  hospital       String?
-  bio            String?
+  licenseNumber   String?
+  hospital        String?
+  bio             String?
 
   // Relations
-  receivedReports Report[] @relation("DoctorReports")
+  receivedReports Report[]       @relation("DoctorReports")
+  prescriptions   Prescription[] @relation("DoctorPrescriptions")
+  dataRequests    DataRequest[]  @relation("DoctorDataRequests")
 }
 
 model ObfuscatedUser {
-  id             String        @id @map("_id")
-  userId         String
-  age            Int?
-  sex            Boolean?
-  activityLevel  ActivityLevel?
-  allergies      Allergy[]
-  healthIssues   HealthIssue[]
-  diet           Diet[]
+  id            String         @id @map("_id")
+  userId        String
+  age           Int?
+  sex           Boolean?
+  activityLevel ActivityLevel?
+  allergies     Allergy[]
+  healthIssues  HealthIssue[]
+  diet          Diet[]
 
-  // This model is now created for a single report
-  report         Report?       @relation(fields: [reportId], references: [id])
-  reportId       String?       @unique @db.ObjectId
+  // One-to-one relation with Report
+  report Report? @relation("ObfuscatedUserReport")
 }
 
 model Report {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  body           String
-  createdAt      DateTime      @default(now())
-  status         ReportStatus  @default(PENDING)
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  body      String
+  createdAt DateTime     @default(now())
+  status    ReportStatus @default(PENDING)
 
-  // Patient (anonymized) - now a one-to-one relation
-  obfuscatedUser ObfuscatedUser?
+  // Patient (anonymized) - one-to-one relation
+  obfuscatedUser   ObfuscatedUser? @relation("ObfuscatedUserReport", fields: [obfuscatedUserId], references: [id])
+  obfuscatedUserId String?         @unique
 
   // Original patient (for internal reference)
-  patient        Patient        @relation("PatientReports", fields: [patientId], references: [id])
-  patientId      String
+  patient   Patient @relation("PatientReports", fields: [patientId], references: [id])
+  patientId String
 
   // Doctor receiving the report
-  doctor         Doctor         @relation("DoctorReports", fields: [doctorId], references: [id])
-  doctorId       String
+  doctor   Doctor @relation("DoctorReports", fields: [doctorId], references: [id])
+  doctorId String
+
+  // Data requests associated with this report
+  dataRequests DataRequest[]
+}
+
+model DataRequest {
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  status    RequestStatus @default(PENDING)
+  field     String // The specific field being requested (e.g., "age", "allergies")
+
+  // Relations
+  report   Report @relation(fields: [reportId], references: [id])
+  reportId String @db.ObjectId
+
+  doctor   Doctor @relation("DoctorDataRequests", fields: [doctorId], references: [id])
+  doctorId String
+
+  patient   Patient @relation("PatientDataRequests", fields: [patientId], references: [id])
+  patientId String
+}
+
+model Prescription {
+  id               String             @id @default(auto()) @map("_id") @db.ObjectId
+  name             String
+  brand            String?
+  dosage           String
+  frequency        String
+  instructions     String?
+  dateIssued       DateTime
+  endDate          DateTime
+  refillsRemaining Int                @default(0)
+  status           PrescriptionStatus
+  type             PrescriptionType
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  // Comparison data
+  avgDosage       String?
+  isBelow         Boolean?
+  comparisonNotes String?
+
+  // Warnings as an array of strings
+  warnings String[]
+
+  // Relations
+  patient   Patient @relation("PatientPrescriptions", fields: [patientId], references: [id])
+  patientId String
+
+  prescribedBy Doctor @relation("DoctorPrescriptions", fields: [doctorId], references: [id])
+  doctorId     String
 }
 
 enum ActivityLevel {
@@ -148,4 +204,28 @@ enum ReportStatus {
   PENDING
   REVIEWED
   RESPONDED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+enum PrescriptionStatus {
+  ACTIVE
+  EXPIRED
+  PENDING
+  CANCELLED
+}
+
+enum PrescriptionType {
+  PAIN
+  ANTIBIOTIC
+  ANTIDEPRESSANT
+  BLOOD_PRESSURE
+  DIABETES
+  ALLERGY
+  CHOLESTEROL
+  OTHER
 }
