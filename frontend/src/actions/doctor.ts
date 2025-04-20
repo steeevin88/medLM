@@ -60,3 +60,24 @@ export async function createDoctor(userId: string, doctorData: DoctorData) {
     return { success: false, doctor: null, error: "Failed to create doctor profile" };
   }
 }
+
+export async function getDoctors() {
+  try {
+    const doctors = await prisma.doctor.findMany({
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        specialization: true,
+        email: true,
+        hospital: true,
+        bio: true,
+      }
+    });
+
+    return { doctors, error: null };
+  } catch (error) {
+    console.error('Error fetching doctors:', error);
+    return { doctors: [], error: 'Failed to fetch doctors' };
+  }
+}

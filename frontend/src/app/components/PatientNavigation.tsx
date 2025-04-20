@@ -10,7 +10,8 @@ import {
   Heart,
   Activity,
   Calendar,
-  Settings
+  Settings,
+  MailPlus
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -120,6 +121,12 @@ export default function PatientNavigation({ activeTab, onTabChange }: Navigation
       name: 'Prescriptions',
       icon: <Prescription className="h-5 w-5" />,
       notifications: 1
+    },
+    {
+      id: 'doctor-report',
+      name: 'Send Doctor Report',
+      icon: <MailPlus className="h-5 w-5" />,
+      notifications: 0
     }
   ];
 
