@@ -6,7 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
-   output = "../../node_modules/.prisma/client"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -14,8 +14,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @map("_id") @db.ObjectId
+model Patient {
+  id        String   @id @map("_id")
   firstName String?
   lastName  String?
   email     String?  @unique
@@ -34,6 +34,64 @@ model User {
   additionalInfo String?
   heartRate      Int?
   bloodPressure  String?
+
+  // Relations
+  sentReports    Report[]  @relation("PatientReports")
+}
+
+model Doctor {
+  id             String   @id @map("_id")
+  firstName      String?
+  lastName       String?
+  email          String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sex            Boolean
+  age            Int
+  location       String
+  fieldOfStudy   String
+  specialization String?
+  yearsExperience Int?
+  licenseNumber  String?
+  hospital       String?
+  bio            String?
+
+  // Relations
+  receivedReports Report[] @relation("DoctorReports")
+}
+
+model ObfuscatedUser {
+  id             String        @id @map("_id")
+  userId         String
+  age            Int?
+  sex            Boolean?
+  activityLevel  ActivityLevel?
+  allergies      Allergy[]
+  healthIssues   HealthIssue[]
+  diet           Diet[]
+
+  // Relations
+  reports        Report[]
+}
+
+model Report {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  body           String
+  createdAt      DateTime      @default(now())
+  status         ReportStatus  @default(PENDING)
+
+  // Patient (anonymized)
+  obfuscatedUser ObfuscatedUser @relation(fields: [obfuscatedUserId], references: [id])
+  obfuscatedUserId String
+
+  // Original patient (for internal reference)
+  patient        Patient        @relation("PatientReports", fields: [patientId], references: [id])
+  patientId      String
+
+  // Doctor receiving the report
+  doctor         Doctor         @relation("DoctorReports", fields: [doctorId], references: [id])
+  doctorId       String
 }
 
 enum ActivityLevel {
@@ -84,4 +142,10 @@ enum Diet {
   DAIRY_FREE
   LOW_CARB
   OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESPONDED
 }

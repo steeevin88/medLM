@@ -1,54 +1,177 @@
 "use client";
 
-import React, { useState } from 'react';
-import { patientsMockData, conditionsMockData } from '../context/MockData';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, User } from 'lucide-react';
+import { Search, FileText, AlertCircle } from 'lucide-react';
+import { getReportsForDoctor, getReportById, updateReportStatus } from '@/actions/user';
+import ReactMarkdown from 'react-markdown';
+import { Skeleton } from "@/components/ui/skeleton";
+import { useUser } from "@clerk/nextjs";
+
+// mock data b/c backend is empty rn
+const mockReports = [
+  {
+    id: '507f1f77bcf86cd799439011',
+    body: "# Patient Report\n\nThe patient has been experiencing **severe headaches** for the past 2 weeks, along with nausea and sensitivity to light.\n\nThey report that pain is worse in the mornings and is not relieved by over-the-counter painkillers.\n\n## Previous Medical History\nNo history of migraines or neurological conditions.",
+    createdAt: new Date(),
+    status: 'PENDING',
+    obfuscatedUser: {
+      id: '507f1f77bcf86cd799439012',
+      age: 34,
+      sex: true,
+      activityLevel: 'MEDIUM',
+      allergies: ['POLLEN'],
+      healthIssues: ['HIGH_BLOOD_PRESSURE'],
+      diet: ['MEDITERRANEAN']
+    }
+  },
+  {
+    id: '507f1f77bcf86cd799439013',
+    body: "# Urgent Review Needed\n\nPatient reports **chest pain** that radiates to the left arm, accompanied by shortness of breath.\n\nThese symptoms began yesterday after physical exertion and have not subsided.\n\n## Vitals\n- BP: 145/95\n- Heart rate: 92 bpm\n- Oxygen saturation: 94%",
+    createdAt: new Date(),
+    status: 'PENDING',
+    obfuscatedUser: {
+      id: '507f1f77bcf86cd799439014',
+      age: 56,
+      sex: true,
+      activityLevel: 'LOW',
+      allergies: [],
+      healthIssues: ['DIABETES', 'HEART_DISEASE'],
+      diet: ['LOW_CARB']
+    }
+  },
+  {
+    id: '507f1f77bcf86cd799439015',
+    body: "# Follow-up Report\n\nPatient is 2 weeks post-surgery and reports good healing of the incision site.\n\nHowever, they've noticed increased swelling in the evenings and mild pain when walking long distances.\n\n## Current Medications\n- Acetaminophen as needed\n- Daily multivitamin",
+    createdAt: new Date(),
+    status: 'PENDING',
+    obfuscatedUser: {
+      id: '507f1f77bcf86cd799439016',
+      age: 45,
+      sex: false,
+      activityLevel: 'MEDIUM',
+      allergies: ['ANTIBIOTICS'],
+      healthIssues: [],
+      diet: ['REGULAR']
+    }
+  }
+];
 
 export default function DoctorDashboard() {
-  const [selectedPatient, setSelectedPatient] = useState<number | null>(null);
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [requestedDataAccess, setRequestedDataAccess] = useState<{[key: number]: {biologicalSex: boolean}}>({});
+  const [requestedDataAccess, setRequestedDataAccess] = useState<{[key: string]: {[field: string]: boolean}}>({});
 
-  const requestSexDataAccess = (patientId: number) => {
+  useEffect(() => {
+    async function loadReports() {
+      if (!isUserLoaded || !user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { reports: doctorReports, error } = await getReportsForDoctor(user.id);
+
+        if (error || !doctorReports || doctorReports.length === 0) {
+          // Fallback to mock data if no reports or error
+          setReports(mockReports);
+        } else {
+          setReports(doctorReports);
+        }
+      } catch (error) {
+        console.error("Error loading reports:", error);
+        setReports(mockReports);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (isUserLoaded) {
+      loadReports();
+    }
+  }, [isUserLoaded, user]);
+
+  const filteredReports = reports.filter(report => {
+    const lowerSearchQuery = searchQuery.toLowerCase();
+    return (
+      report.body.toLowerCase().includes(lowerSearchQuery) ||
+      report.id.toLowerCase().includes(lowerSearchQuery) ||
+      (report.obfuscatedUser?.healthIssues?.some((issue: string) =>
+        issue.toLowerCase().includes(lowerSearchQuery)
+      ))
+    );
+  });
+
+  useEffect(() => {
+    if (!selectedReportId) {
+      setSelectedReport(null);
+      return;
+    }
+
+    async function getReport() {
+      const reportId = selectedReportId!;
+
+      try {
+        const { report, error } = await getReportById(reportId);
+
+        if (error || !report) {
+          // Fall back to finding in mock data
+          const mockReport = reports.find(r => r.id === reportId);
+          setSelectedReport(mockReport || null);
+        } else {
+          setSelectedReport(report);
+        }
+      } catch (error) {
+        console.error("Error loading report:", error);
+        // Fallback to finding in reports array
+        const fallbackReport = reports.find(r => r.id === reportId);
+        setSelectedReport(fallbackReport || null);
+      }
+    }
+
+    getReport();
+  }, [selectedReportId, reports]);
+
+  // Request access to protected field
+  const requestFieldAccess = (reportId: string, field: string) => {
     setRequestedDataAccess(prev => ({
       ...prev,
-      [patientId]: { ...prev[patientId], biologicalSex: true }
+      [reportId]: { ...(prev[reportId] || {}), [field]: true }
     }));
   };
 
-  const filteredPatients = patientsMockData.filter(patient =>
-    patient.anonymizedId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.recentSymptoms.some(symptom => symptom.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Determine if a field has access requested
+  const hasAccessToField = (reportId: string, field: string) => {
+    return requestedDataAccess[reportId]?.[field] || false;
+  };
 
-  const currentPatient = selectedPatient !== null
-    ? patientsMockData.find(p => p.id === selectedPatient)
-    : null;
-
-  const suggestedConditions = currentPatient
-    ? conditionsMockData.filter(condition =>
-        condition.symptoms.some(symptom =>
-          currentPatient.recentSymptoms.some(patientSymptom =>
-            patientSymptom.toLowerCase().includes(symptom.toLowerCase())
-          )
-        )
-      )
-    : [];
+  // Format health issues for display
+  const formatHealthIssues = (issues: string[] | undefined) => {
+    if (!issues || issues.length === 0) return "None reported";
+    return issues.map(issue =>
+      issue.split('_').map(word =>
+        word.charAt(0) + word.slice(1).toLowerCase()
+      ).join(' ')
+    ).join(', ');
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-      {/* Patient List Card */}
+      {/* Reports List Card */}
       <Card className="md:col-span-1 flex flex-col h-[calc(100vh-12rem)]">
         <CardHeader className="p-4">
-          <CardTitle className="text-xl mb-2">Anonymous Patients</CardTitle>
+          <CardTitle className="text-xl mb-2">Anonymous Reports</CardTitle>
           <div className="relative">
             <Input
               type="text"
-              placeholder="Search by ID or symptoms..."
+              placeholder="Search reports..."
               className="w-full pr-10 text-black"
               value={searchQuery}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
@@ -58,33 +181,50 @@ export default function DoctorDashboard() {
         </CardHeader>
 
         <CardContent className="overflow-y-auto flex-1 space-y-3 p-4 pt-0">
-          {filteredPatients.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No patients match your search.</p>
+          {loading ? (
+            Array(3).fill(0).map((_, i) => (
+              <Card key={i} className="p-4">
+                <Skeleton className="h-4 w-2/3 mb-2" />
+                <Skeleton className="h-4 w-1/2 mb-4" />
+                <div className="flex gap-2 mb-2">
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+                <Skeleton className="h-4 w-5/6" />
+              </Card>
+            ))
+          ) : filteredReports.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">No reports match your search.</p>
           ) : (
-            filteredPatients.map(patient => (
+            filteredReports.map(report => (
               <Card
-                key={patient.id}
-                className={`cursor-pointer transition-colors ${selectedPatient === patient.id ? 'border-primary bg-muted' : 'hover:bg-accent'}`}
-                onClick={() => setSelectedPatient(patient.id)}
+                key={report.id}
+                className={`cursor-pointer transition-colors ${selectedReportId === report.id ? 'border-primary bg-muted' : 'hover:bg-accent'}`}
+                onClick={() => setSelectedReportId(report.id)}
               >
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-medium mb-1">ID: {patient.anonymizedId}</h3>
+                      <h3 className="font-medium mb-1">Report #{report.id}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {patient.age} years • <Badge variant="outline" className="select-none cursor-not-allowed">data protected</Badge>
+                        Patient Age: {report.obfuscatedUser?.age || <Badge variant="outline" className="text-xs">unknown</Badge>}
                       </p>
                     </div>
-                    <Badge variant="secondary">
-                      {patient.pendingTests.length} pending tests
+                    <Badge variant={report.status === 'PENDING' ? 'secondary' : report.status === 'REVIEWED' ? 'outline' : 'default'}>
+                      {report.status}
                     </Badge>
                   </div>
                   <div>
-                    <h4 className="text-xs text-muted-foreground uppercase font-medium mb-1.5">Recent Symptoms:</h4>
+                    <h4 className="text-xs text-muted-foreground uppercase font-medium mb-1.5">Health Issues:</h4>
                     <div className="flex flex-wrap gap-1.5">
-                      {patient.recentSymptoms.map((symptom, idx) => (
-                        <Badge key={idx} variant="outline">{symptom}</Badge>
-                      ))}
+                      {report.obfuscatedUser?.healthIssues?.length > 0 ?
+                        report.obfuscatedUser.healthIssues.map((issue: string, idx: number) => (
+                          <Badge key={idx} variant="outline">
+                            {issue.replace(/_/g, ' ').toLowerCase()}
+                          </Badge>
+                        )) :
+                        <span className="text-sm text-muted-foreground">None reported</span>
+                      }
                     </div>
                   </div>
                 </CardContent>
@@ -94,38 +234,109 @@ export default function DoctorDashboard() {
         </CardContent>
       </Card>
 
-      {/* Patient Details Area */}
+      {/* Report Details Area */}
       <div className="md:col-span-2">
-        {selectedPatient === null ? (
+        {selectedReportId === null ? (
           <Card className="h-full flex flex-col items-center justify-center p-8">
             <CardContent className="text-center">
-              <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-foreground">Select a patient to view details</h3>
+              <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-foreground">Select a report to view details</h3>
               <p className="text-muted-foreground mt-2">
                 Patient information is anonymized to protect privacy while providing essential medical context.
               </p>
             </CardContent>
           </Card>
+        ) : !selectedReport ? (
+          <Card className="h-full flex flex-col items-center justify-center p-8">
+            <CardContent className="text-center">
+              <Skeleton className="w-16 h-16 rounded-full mx-auto mb-4" />
+              <Skeleton className="h-6 w-1/2 mx-auto mb-2" />
+              <Skeleton className="h-4 w-2/3 mx-auto" />
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-6">
+            {/* Report Status Banner */}
+            {selectedReport.status === 'PENDING' && (
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 flex items-center">
+                <AlertCircle className="h-5 w-5 text-yellow-500 mr-3" />
+                <div>
+                  <p className="font-medium text-yellow-700">Pending Review</p>
+                  <p className="text-yellow-600 text-sm">This report requires your attention.</p>
+                </div>
+                <Button
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() => {
+                    if (!selectedReport) return;
+
+                    // Try to update via the API
+                    const updateStatus = async () => {
+                      try {
+                        const { success, report: updatedReport, error } = await updateReportStatus(selectedReport.id, 'REVIEWED');
+
+                        if (success && updatedReport) {
+                          // Update the reports list with the updated report
+                          const updatedReports = reports.map(r =>
+                            r.id === selectedReport.id ? updatedReport : r
+                          );
+                          setReports(updatedReports);
+                          setSelectedReport(updatedReport);
+                        } else {
+                          // Fallback to just updating state locally if API fails
+                          const updatedReports = reports.map(r =>
+                            r.id === selectedReport.id
+                              ? {...r, status: 'REVIEWED'}
+                              : r
+                          );
+                          setReports(updatedReports);
+                          setSelectedReport({...selectedReport, status: 'REVIEWED'});
+                        }
+                      } catch (error) {
+                        console.error("Error updating report status:", error);
+                        // Fallback to local update
+                        const updatedReports = reports.map(r =>
+                          r.id === selectedReport.id
+                            ? {...r, status: 'REVIEWED'}
+                            : r
+                        );
+                        setReports(updatedReports);
+                        setSelectedReport({...selectedReport, status: 'REVIEWED'});
+                      }
+                    };
+
+                    updateStatus();
+                  }}
+                >
+                  Mark as Reviewed
+                </Button>
+              </div>
+            )}
+
             {/* Patient Overview Card */}
             <Card>
               <CardHeader className="p-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-2xl mb-2">Patient {currentPatient?.anonymizedId}</CardTitle>
-                    <div className="flex flex-wrap gap-4 mt-1">
+                    <CardTitle className="text-2xl mb-2">Report #{selectedReport.id}</CardTitle>
+                    <CardDescription>
+                      Submitted on {new Date(selectedReport.createdAt).toLocaleDateString()} • Status: {selectedReport.status}
+                    </CardDescription>
+                    <div className="flex flex-wrap gap-4 mt-3">
                       <div className="flex items-center">
                         <span className="text-gray-600 mr-1">Age:</span>
-                        <span className="font-medium">{currentPatient?.age}</span>
+                        <span className="font-medium">{selectedReport.obfuscatedUser?.age ?? 'Data protected'}</span>
                       </div>
                       <div className="flex items-center">
                         <span className="text-gray-600 mr-1">Sex:</span>
-                        {requestedDataAccess[currentPatient?.id ?? 0]?.biologicalSex ? (
-                          <span className="font-medium">{currentPatient?.biologicalSex}</span>
+                        {hasAccessToField(selectedReport.id, 'sex') || selectedReport.obfuscatedUser?.sex !== undefined ? (
+                          <span className="font-medium">
+                            {selectedReport.obfuscatedUser?.sex === true ? 'Male' :
+                             selectedReport.obfuscatedUser?.sex === false ? 'Female' : 'Other'}
+                          </span>
                         ) : (
                           <button
-                            onClick={() => currentPatient && requestSexDataAccess(currentPatient.id)}
+                            onClick={() => requestFieldAccess(selectedReport.id, 'sex')}
                             className="text-blue-600 text-sm underline font-normal hover:text-blue-800"
                           >
                             Request access
@@ -133,8 +344,11 @@ export default function DoctorDashboard() {
                         )}
                       </div>
                       <div className="flex items-center">
-                        <span className="text-gray-600 mr-1">Last Visit:</span>
-                        <span className="font-medium">{currentPatient?.lastVisit}</span>
+                        <span className="text-gray-600 mr-1">Activity Level:</span>
+                        <span className="font-medium">
+                          {selectedReport.obfuscatedUser?.activityLevel ?
+                            selectedReport.obfuscatedUser.activityLevel : 'Data protected'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -143,167 +357,112 @@ export default function DoctorDashboard() {
               </CardHeader>
             </Card>
 
-            {/* Symptoms & Tests Cards (Grid) */}
+            {/* Report Content Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Report Content</CardTitle>
+              </CardHeader>
+              <CardContent className="prose prose-slate max-w-none">
+                <ReactMarkdown>{selectedReport.body}</ReactMarkdown>
+              </CardContent>
+            </Card>
+
+            {/* Health Data Cards (Grid) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Reported Symptoms</CardTitle>
+                  <CardTitle className="text-lg">Health Issues</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-3">
-                    {currentPatient?.recentSymptoms.map((symptom, idx) => (
-                      <li key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md">
-                        <svg
-                          className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span className="text-gray-800">{symptom}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {!selectedReport.obfuscatedUser?.healthIssues?.length ? (
+                    <p className="text-muted-foreground">No health issues reported.</p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {selectedReport.obfuscatedUser.healthIssues.map((issue: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md">
+                          <svg
+                            className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span className="text-gray-800">
+                            {issue.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Pending Tests</CardTitle>
+                  <CardTitle className="text-lg">Allergies</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-3">
-                    {currentPatient?.pendingTests.map((test, idx) => (
-                      <li key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md">
-                        <svg
-                          className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.75 9.25a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span className="text-gray-800">{test}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {!selectedReport.obfuscatedUser?.allergies?.length ? (
+                    <p className="text-muted-foreground">No allergies reported.</p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {selectedReport.obfuscatedUser.allergies.map((allergy: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md">
+                          <svg
+                            className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span className="text-gray-800">
+                            {allergy.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </CardContent>
               </Card>
             </div>
 
-            {/* Suggested Conditions Card */}
+            {/* Diet & Activity Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Suggested Conditions</CardTitle>
+                <CardTitle className="text-lg">Lifestyle Information</CardTitle>
               </CardHeader>
               <CardContent>
-                {suggestedConditions.length === 0 ? (
-                  <p className="text-muted-foreground">No conditions suggested based on current symptoms.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {suggestedConditions.map(condition => (
-                      <Card key={condition.id} className="border-muted-foreground/30">
-                        <CardHeader>
-                          <CardTitle className="text-base">{condition.name}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="bg-gray-50 p-3 rounded-md">
-                            <h5 className="text-sm font-medium text-gray-700 mb-2">Matching Symptoms:</h5>
-                            <ul className="mt-1 text-sm space-y-2">
-                              {condition.symptoms.map((symptom, idx) => (
-                                <li key={idx} className="flex items-center gap-2">
-                                  <span
-                                    className={
-                                      currentPatient?.recentSymptoms.some(s =>
-                                        s.toLowerCase().includes(symptom.toLowerCase())
-                                      )
-                                        ? "w-2 h-2 bg-green-500 rounded-full"
-                                        : "w-2 h-2 bg-gray-300 rounded-full"
-                                    }
-                                  ></span>
-                                  <span className="text-gray-800">{symptom}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          <div className="bg-gray-50 p-3 rounded-md">
-                            <h5 className="text-sm font-medium text-gray-700 mb-2">Recommended Tests:</h5>
-                            <ul className="mt-1 text-sm space-y-2">
-                              {condition.relatedTests.map((test, idx) => (
-                                <li key={idx} className="flex items-center gap-2">
-                                  <span
-                                    className={
-                                      currentPatient?.pendingTests.includes(test)
-                                        ? "w-2 h-2 bg-blue-500 rounded-full"
-                                        : "w-2 h-2 bg-gray-300 rounded-full"
-                                    }
-                                  ></span>
-                                  <span className="text-gray-800">{test}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Data Access Request Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Protected Patient Data</CardTitle>
-                <CardDescription>
-                  Some patient data is protected. Request access when medically necessary.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-md p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <svg className="w-5 h-5 text-blue-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
-                      </svg>
-                      <span className="font-medium text-gray-800">Biological Sex</span>
-                    </div>
-                    {requestedDataAccess[currentPatient?.id ?? 0]?.biologicalSex ? (
-                      <Badge variant="secondary">Access Granted</Badge>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => currentPatient && requestSexDataAccess(currentPatient.id)}
-                      >
-                        Request Access
-                      </Button>
-                    )}
-                  </div>
-
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-gray-50 p-4 rounded-md">
-                    {requestedDataAccess[currentPatient?.id ?? 0]?.biologicalSex ? (
-                      <p className="text-gray-800">{currentPatient?.biologicalSex}</p>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <svg className="w-5 h-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                        </svg>
-                        <p className="text-gray-500">Protected information - requires explicit access request</p>
+                    <h5 className="font-medium mb-2">Diet Type</h5>
+                    {selectedReport.obfuscatedUser?.diet?.length ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedReport.obfuscatedUser.diet.map((diet: string, idx: number) => (
+                          <Badge key={idx} variant="outline">
+                            {diet.replace(/_/g, ' ').toLowerCase()}
+                          </Badge>
+                        ))}
                       </div>
+                    ) : (
+                      <p className="text-muted-foreground">No diet information available</p>
                     )}
                   </div>
-
-                  <p className="text-xs text-gray-500 mt-3">
-                    Patient will be notified of your request and must consent before this information is shared.
-                  </p>
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <h5 className="font-medium mb-2">Activity Level</h5>
+                    <p>
+                      {selectedReport.obfuscatedUser?.activityLevel ?
+                        selectedReport.obfuscatedUser.activityLevel : 'Data protected'}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
