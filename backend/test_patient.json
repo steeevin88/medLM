@@ -1,0 +1,17 @@
+{
+  "basic_info": {
+    "age": "54",
+    "height": "165",
+    "weight": "85",
+    "sex": "male"
+  },
+  "question": "Lately I've been getting headaches, especially in the morning. Sometimes I feel pressure in my head and get lightheaded.",
+  "medical_history": {
+    "past_events": [],
+    "current_illnesses": ["hypertension"],
+    "symptoms": ["headaches", "lightheadedness", "pressure in head"],
+    "medications": ["lisinopril"],
+    "allergies": [],
+    "lifestyle_notes": ["sedentary lifestyle", "salt-heavy diet", "does not monitor BP regularly"]
+  }
+} 
