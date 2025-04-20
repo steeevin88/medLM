@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 import PatientNavigation from "../components/PatientNavigation";
 import PatientOnboarding from "../components/PatientOnboarding";
 import DocumentUpload from "../components/DocumentUpload";
-import PatientChat from "../components/PatientChat";
+import MedLMAssistantChat from "../components/MedLMAssistantChat";
 import HealthVitals from "../components/HealthVitals";
 import ActivityExercise from "../components/ActivityExercise";
 import Appointments from "../components/Appointments";
@@ -25,7 +25,7 @@ export default function PatientPage() {
   const renderActiveTabContent = () => {
     switch(activeTab) {
       case 'chat':
-        return <PatientChat />;
+        return <MedLMAssistantChat />;
       case 'profile':
         return <PatientOnboarding />;
       case 'documents':
@@ -48,7 +48,7 @@ export default function PatientPage() {
           </Card>
         );
       default:
-        return <PatientChat />;
+        return <MedLMAssistantChat />;
     }
   };
 
