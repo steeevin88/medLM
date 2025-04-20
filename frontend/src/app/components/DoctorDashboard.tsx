@@ -113,6 +113,19 @@ export default function DoctorDashboard() {
         issue.toLowerCase().includes(lowerSearchQuery)
       ))
     );
+  }).sort((a, b) => {
+    // First sort by status: PENDING first, REVIEWED last
+    if (a.status !== b.status) {
+      // If a is REVIEWED, it should come after b
+      if (a.status === 'REVIEWED') return 1;
+      // If b is REVIEWED, it should come after a
+      if (b.status === 'REVIEWED') return -1;
+      // For other status comparisons, alphabetical order
+      return a.status.localeCompare(b.status);
+    }
+
+    // Then sort by date (most recent first) within the same status
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   useEffect(() => {
@@ -211,6 +224,42 @@ export default function DoctorDashboard() {
     em: (props: any) => <em className="italic" {...props} />
   };
 
+  // Handler to toggle a report's status between REVIEWED and PENDING
+  const toggleReportStatus = async (e: React.MouseEvent, report: any) => {
+    e.stopPropagation(); // Prevent card click event
+
+    if (report.status !== 'REVIEWED') return;
+
+    try {
+      const { success, report: updatedReport, error } = await updateReportStatus(report.id, 'PENDING');
+
+      if (success && updatedReport) {
+        // Update in reports array
+        const updatedReports = reports.map(r =>
+          r.id === report.id ? updatedReport : r
+        );
+        setReports(updatedReports);
+
+        // Update selected report if it's the same one
+        if (selectedReport && selectedReport.id === report.id) {
+          setSelectedReport(updatedReport);
+        }
+      } else {
+        // Fallback update if API call succeeds but doesn't return data
+        const updatedReports = reports.map(r =>
+          r.id === report.id ? {...r, status: 'PENDING'} : r
+        );
+        setReports(updatedReports);
+
+        if (selectedReport && selectedReport.id === report.id) {
+          setSelectedReport({...selectedReport, status: 'PENDING'});
+        }
+      }
+    } catch (error) {
+      console.error("Error updating report status:", error);
+    }
+  };
+
   return (
     <div className="mt-6">
       {/* Reports List Card */}
@@ -248,7 +297,12 @@ export default function DoctorDashboard() {
             filteredReports.map(report => (
               <Card
                 key={report.id}
-                className={`cursor-pointer transition-colors ${selectedReportId === report.id ? 'border-primary bg-muted' : 'hover:bg-accent'}`}
+                className={selectedReportId === report.id
+                  ? "cursor-pointer transition-colors border-primary bg-muted"
+                  : report.status === "REVIEWED"
+                    ? "cursor-pointer transition-colors bg-gray-300 hover:bg-zinc-300"
+                    : "cursor-pointer transition-colors hover:bg-accent"
+                }
                 onClick={() => setSelectedReportId(report.id)}
               >
                 <CardContent className="p-4">
@@ -262,7 +316,16 @@ export default function DoctorDashboard() {
                       </p>
                       <p className="text-sm text-muted-foreground">Created: {new Date(report.createdAt).toLocaleDateString()}</p>
                     </div>
-                    <Badge variant={report.status === 'PENDING' ? 'secondary' : report.status === 'REVIEWED' ? 'outline' : 'default'}>
+                    <Badge
+                      variant={report.status === 'PENDING'
+                        ? 'secondary'
+                        : report.status === 'REVIEWED'
+                          ? 'outline'
+                          : 'default'
+                      }
+                      className={report.status === 'REVIEWED' ? 'cursor-pointer hover:bg-gray-200' : ''}
+                      onClick={report.status === 'REVIEWED' ? (e) => toggleReportStatus(e, report) : undefined}
+                    >
                       {report.status}
                     </Badge>
                   </div>
@@ -300,7 +363,11 @@ export default function DoctorDashboard() {
                     <DialogTitle className="text-2xl font-semibold">Report #{selectedReport.id}</DialogTitle>
                     <DialogDescription className="flex flex-wrap items-center gap-3 mt-1">
                       Submitted on {new Date(selectedReport.createdAt).toLocaleDateString()} •
-                      <Badge variant={selectedReport.status === 'PENDING' ? 'secondary' : 'default'}>
+                      <Badge
+                        variant={selectedReport.status === 'PENDING' ? 'secondary' : 'default'}
+                        className={selectedReport.status === 'REVIEWED' ? 'cursor-pointer hover:bg-gray-200' : ''}
+                        onClick={selectedReport.status === 'REVIEWED' ? (e) => toggleReportStatus(e, selectedReport) : undefined}
+                      >
                         {selectedReport.status}
                       </Badge>
 
