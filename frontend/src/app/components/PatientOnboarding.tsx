@@ -32,7 +32,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { uploadPatientData } from "@/actions/user";
+import { createPatient } from "@/actions/user";
 import {
   ActivityLevel,
   Allergy,
@@ -42,7 +42,6 @@ import {
 } from "@prisma/client";
 import { useUser } from "@clerk/nextjs";
 
-// Define enums for the form
 const ALLERGIES = [
   { id: "peanuts", label: "Peanuts" },
   { id: "shellfish", label: "Shellfish" },
@@ -112,7 +111,6 @@ const formSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof formSchema>;
 
-// Helper function to map activity levels
 function mapActivityLevel(level: string): ActivityLevel {
   switch (level) {
     case "sedentary":
@@ -128,7 +126,6 @@ function mapActivityLevel(level: string): ActivityLevel {
   }
 }
 
-// Helper function to map diet types
 function mapDiet(diet: string): Diet {
   switch (diet) {
     case "vegetarian":
@@ -177,8 +174,29 @@ function mapAllergies(allergies: string[]): Allergy[] {
   });
 }
 
+function mapMedications(medications: string[]): Medication[] {
+  return [...medications].map((medication) => {
+    switch (medication) {
+      case "antibiotics":
+        return Medication.ANTIBIOTICS;
+      case "antihistamines":
+        return Medication.ANTIBIOTICS;
+      case "antidepressants":
+        return Medication.OTHER;
+      case "painkillers":
+        return Medication.IBUPROFEN;
+      case "bloodpressure":
+        return Medication.BLOOD_PRESSURE_MEDICATION;
+      case "diabetes":
+        return Medication.INSULIN;
+      case "other":
+      default:
+        return Medication.OTHER;
+    }
+  });
+}
+
 export default function PatientOnboarding() {
-  // Define default values for the form
   const defaultValues: Partial<ProfileFormValues> = {
     sex: "male",
     age: undefined,
@@ -192,37 +210,44 @@ export default function PatientOnboarding() {
     activityLevel: "moderate",
     additionalInfo: "",
   };
-  const { user, isLoaded } = useUser() as { user: User; isLoaded: boolean };
+  const { user, isLoaded } = useUser();
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
 
   function onSubmit(data: ProfileFormValues) {
-    if (isLoaded || !user) return;
+    if (!isLoaded || !user) return;
 
-    const patient: Patient = {
+    const patientData = {
       sex: data.sex === "male",
       age: data.age,
       height: data.height,
       weight: data.weight,
       activityLevel: mapActivityLevel(data.activityLevel),
       allergies: mapAllergies(data.allergies ?? []),
-      medications: (data.medications || []).map(
-        (medication) => medication as Medication
-      ),
+      medications: mapMedications(data.medications ?? []),
       diet: [mapDiet(data.diet)],
-      additionalInfo: data.additionalInfo ?? null,
-      id: user.id,
-      firstName: null,
-      lastName: null,
-      email: null,
+      additionalInfo: data.additionalInfo,
+      firstName: user.firstName ?? null,
+      lastName: user.lastName ?? null,
+      email: user.primaryEmailAddress?.emailAddress ?? null,
       healthIssues: [],
       heartRate: null,
       bloodPressure: null,
     };
 
-    uploadPatientData(patient);
+    createPatient(user.id, patientData)
+      .then((result) => {
+        if (result.success) {
+          window.location.href = "/patient";
+        } else {
+          console.error(result.error);
+        }
+      })
+      .catch((err) => {
+        console.error("Error creating patient profile:", err);
+      });
   }
 
   return (
