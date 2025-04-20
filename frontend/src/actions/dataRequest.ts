@@ -19,6 +19,7 @@ export async function createDataRequest(
     });
 
     // If a request already exists, don't create a duplicate
+    console.log("existingRequest", existingRequest);
     if (existingRequest) {
       return {
         success: true,
