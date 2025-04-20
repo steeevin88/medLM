@@ -74,7 +74,7 @@ model Prescription {
   endDate        DateTime
   refillsRemaining Int        @default(0)
   status         PrescriptionStatus
-  medicationType Medication
+  type           PrescriptionType
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   
@@ -104,8 +104,9 @@ model ObfuscatedUser {
   healthIssues   HealthIssue[]
   diet           Diet[]
 
-  // One-to-one relation with Report
-  report         Report?
+  // This model is now created for a single report
+  report         Report?       @relation(fields: [reportId], references: [id])
+  reportId       String?       @unique @db.ObjectId
 }
 
 model Report {
@@ -124,27 +125,6 @@ model Report {
   // Doctor receiving the report
   doctor         Doctor         @relation("DoctorReports", fields: [doctorId], references: [id])
   doctorId       String
-
-  // Data requests associated with this report
-  dataRequests   DataRequest[]
-}
-
-model DataRequest {
-  id          String           @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  status      RequestStatus    @default(PENDING)
-  field       String           // The specific field being requested (e.g., "age", "allergies")
-
-  // Relations
-  report      Report           @relation(fields: [reportId], references: [id])
-  reportId    String           @db.ObjectId
-
-  doctor      Doctor           @relation(fields: [doctorId], references: [id])
-  doctorId    String
-
-  patient     Patient          @relation(fields: [patientId], references: [id])
-  patientId   String
 }
 
 enum ActivityLevel {
@@ -203,8 +183,21 @@ enum ReportStatus {
   RESPONDED
 }
 
-enum RequestStatus {
+enum PrescriptionStatus {
+  ACTIVE
+  EXPIRED
   PENDING
-  APPROVED
-  DENIED
+  CANCELLED
 }
+
+enum PrescriptionType {
+  PAIN
+  ANTIBIOTIC
+  ANTIDEPRESSANT
+  BLOOD_PRESSURE
+  DIABETES
+  ALLERGY
+  CHOLESTEROL
+  OTHER
+}
+

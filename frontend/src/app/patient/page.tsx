@@ -68,9 +68,9 @@ export default function PatientPage() {
 
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 min-h-[calc(100vh-6rem)] md:h-[calc(100vh-6rem)]">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-6rem)]">
         {/* Left sidebar with navigation */}
-        <div className="md:col-span-3 lg:col-span-2 mb-4 md:mb-0 md:h-full">
+        <div className="md:col-span-3 lg:col-span-2 h-auto md:h-full">
           <PatientNavigation
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -78,8 +78,8 @@ export default function PatientPage() {
         </div>
 
         {/* Main content area */}
-        <div className="md:col-span-9 lg:col-span-10 flex-1 md:h-full overflow-auto">
-          <div className="h-full overflow-auto">
+        <div className="md:col-span-9 lg:col-span-10 h-auto md:h-full overflow-hidden">
+          <div className="h-full overflow-hidden">
             {renderActiveTabContent()}
           </div>
         </div>
