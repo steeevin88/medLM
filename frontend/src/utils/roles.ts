@@ -1,4 +1,5 @@
-import { getDoctorData, getPatientData } from "@/actions/user";
+import { getPatientData } from "@/actions/user";
+import { getDoctorData } from "@/actions/doctor";
 import { useUser } from "@clerk/nextjs";
 
 export type Role = "patient" | "doctor";
