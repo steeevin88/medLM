@@ -113,12 +113,6 @@ export async function sendDoctorReport({ reportBody, doctorId }: SendReportParam
       where: { id: userId },
       select: {
         id: true,
-        age: true,
-        sex: true,
-        activityLevel: true,
-        allergies: true,
-        healthIssues: true,
-        diet: true,
       },
     });
 
@@ -126,17 +120,17 @@ export async function sendDoctorReport({ reportBody, doctorId }: SendReportParam
       return { success: false, error: "Patient profile not found" };
     }
 
-    // Create obfuscated user
+    // Create obfuscated user - only include symptoms, all other fields are null by default
     const obfuscatedUser = await prisma.obfuscatedUser.create({
       data: {
         id: `obf_${userId}_${Date.now()}`,
         userId: userId,
-        age: patient.age,
-        sex: patient.sex,
-        activityLevel: patient.activityLevel,
-        allergies: patient.allergies,
-        healthIssues: patient.healthIssues,
-        diet: patient.diet,
+        age: null,
+        sex: null,
+        activityLevel: null,
+        allergies: [],
+        diet: [],
+        healthIssues: [],
       },
     });
 

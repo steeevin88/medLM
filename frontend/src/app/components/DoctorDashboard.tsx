@@ -261,6 +261,8 @@ export default function DoctorDashboard() {
     }
   };
 
+  console.log("reports", reports);
+
   return (
     <div className="mt-6">
       {/* Reports List Card */}

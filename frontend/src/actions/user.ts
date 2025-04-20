@@ -96,3 +96,78 @@ export async function getPatientByUserId(userId: string) {
     return { success: false, patient: null, error: "Failed to fetch patient profile" };
   }
 }
+
+export async function updateDataRequestStatus(requestId: string, status: 'APPROVED' | 'DENIED') {
+  try {
+    // First update the status of the request
+    const dataRequest = await prisma.dataRequest.update({
+      where: {
+        id: requestId,
+      },
+      data: {
+        status,
+        updatedAt: new Date()
+      },
+      include: {
+        report: {
+          include: {
+            obfuscatedUser: true
+          }
+        },
+        patient: true
+      }
+    });
+
+    // If approved, update the obfuscatedUser to include the requested field
+    if (status === 'APPROVED' && dataRequest.report?.obfuscatedUser) {
+      const field = dataRequest.field;
+      const patientId = dataRequest.patientId;
+
+      // Get the actual field value from the patient
+      const patient = await prisma.patient.findUnique({
+        where: { id: patientId },
+      });
+
+      if (patient && patient[field as keyof typeof patient] !== undefined) {
+        const fieldValue = patient[field as keyof typeof patient];
+
+        // Update the obfuscatedUser with the field value from the patient
+        await prisma.obfuscatedUser.update({
+          where: { id: dataRequest.report.obfuscatedUser.id },
+          data: { [field]: fieldValue }
+        });
+      }
+    }
+
+    return { success: true, request: dataRequest, error: null };
+  } catch (error) {
+    console.error("Error updating data request status:", error);
+    return { success: false, request: null, error: "Failed to update data request status" };
+  }
+}
+
+export async function getPatientFieldValue(patientId: string, field: string) {
+  try {
+    const patient = await prisma.patient.findUnique({
+      where: {
+        id: patientId,
+      },
+      select: {
+        [field]: true
+      }
+    });
+
+    if (!patient) {
+      return { success: false, value: null, error: "Patient not found" };
+    }
+
+    return {
+      success: true,
+      value: patient[field as keyof typeof patient],
+      error: null
+    };
+  } catch (error) {
+    console.error(`Error fetching patient ${field}:`, error);
+    return { success: false, value: null, error: `Failed to fetch patient ${field}` };
+  }
+}
