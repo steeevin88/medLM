@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, FileText, AlertCircle, X } from 'lucide-react';
-import { getReportsForDoctor, getReportById, updateReportStatus } from '@/actions/user';
+import { getReportsForDoctor, getReportById, updateReportStatus, createDataRequest } from '@/actions/user';
 import ReactMarkdown from 'react-markdown';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@clerk/nextjs";
@@ -19,101 +19,6 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 
-// mock data b/c backend is empty rn
-const mockReports = [
-  {
-    id: '507f1f77bcf86cd799439011',
-    body: "# Patient Report\n\nThe patient has been experiencing **severe headaches** for the past 2 weeks, along with nausea and sensitivity to light.\n\nThey report that pain is worse in the mornings and is not relieved by over-the-counter painkillers.\n\n## Previous Medical History\nNo history of migraines or neurological conditions.\n\n## Current Symptoms\n- Throbbing pain on one side of the head\n- Sensitivity to light and sound\n- Nausea and occasional vomiting\n- Visual disturbances before headache onset\n\n## Current Medications\n- Acetaminophen (ineffective for current symptoms)\n- Multivitamin daily",
-    createdAt: new Date(),
-    status: 'PENDING',
-    obfuscatedUser: {
-      id: '507f1f77bcf86cd799439012',
-      age: 34,
-      sex: true,
-      activityLevel: 'MEDIUM',
-      allergies: ['POLLEN'],
-      healthIssues: ['HIGH_BLOOD_PRESSURE'],
-      diet: ['MEDITERRANEAN']
-    }
-  },
-  {
-    id: '507f1f77bcf86cd799439013',
-    body: "# Urgent Review Needed\n\nPatient reports **chest pain** that radiates to the left arm, accompanied by shortness of breath.\n\nThese symptoms began yesterday after physical exertion and have not subsided.\n\n## Vitals\n- BP: 145/95\n- Heart rate: 92 bpm\n- Oxygen saturation: 94%\n\n## Risk Factors\n- Family history of heart disease\n- Sedentary lifestyle\n- Poor diet high in processed foods\n- Recent increase in work stress\n\n## Recent Changes\nPatient reports increased work hours and decreased sleep over the past month.",
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-    status: 'PENDING',
-    obfuscatedUser: {
-      id: '507f1f77bcf86cd799439014',
-      age: 56,
-      sex: true,
-      activityLevel: 'LOW',
-      allergies: [],
-      healthIssues: ['DIABETES', 'HEART_DISEASE'],
-      diet: ['LOW_CARB']
-    }
-  },
-  {
-    id: '507f1f77bcf86cd799439015',
-    body: "# Follow-up Report\n\nPatient is 2 weeks post-surgery and reports good healing of the incision site.\n\nHowever, they've noticed increased swelling in the evenings and mild pain when walking long distances.\n\n## Current Medications\n- Acetaminophen as needed\n- Daily multivitamin\n- Antibiotic course (completed)\n\n## Wound Site\n- No redness or discharge\n- Mild swelling at end of day\n- Sutures intact with good approximation\n\n## Activity Level\nGradually increasing daily steps as tolerated, but experiencing fatigue by evening.",
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-    status: 'PENDING',
-    obfuscatedUser: {
-      id: '507f1f77bcf86cd799439016',
-      age: 45,
-      sex: false,
-      activityLevel: 'MEDIUM',
-      allergies: ['ANTIBIOTICS'],
-      healthIssues: [],
-      diet: ['REGULAR']
-    }
-  },
-  {
-    id: '507f1f77bcf86cd799439017',
-    body: "# Chronic Pain Evaluation\n\nPatient reports **ongoing lower back pain** that has persisted for 8+ months with gradually increasing intensity.\n\nPain is described as dull and constant with occasional sharp flares, particularly after prolonged sitting or standing.\n\n## Pain Management Attempts\n- Physical therapy (minimal relief)\n- Over-the-counter NSAIDs (moderate temporary relief)\n- Heat therapy (some relief)\n- Massage therapy (temporary relief)\n\n## Impact on Daily Life\n- Difficulty sleeping due to pain\n- Reduced ability to exercise\n- Problems sitting at work for extended periods\n- Affecting mood and overall quality of life\n\n## Imaging History\nNo recent imaging studies have been conducted.",
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-    status: 'PENDING',
-    obfuscatedUser: {
-      id: '507f1f77bcf86cd799439018',
-      // Intentionally omitted fields
-      age: null, // Omitted age
-      sex: undefined, // Omitted sex
-      activityLevel: 'HIGH',
-      allergies: ['NSAIDS', 'SHELLFISH'],
-      healthIssues: ['ANXIETY', 'HYPERTENSION'],
-      diet: [] // No diet info provided
-    }
-  },
-  {
-    id: '507f1f77bcf86cd799439019',
-    body: "# Skin Condition Consultation\n\nPatient presents with a **persistent rash** on both arms and upper chest that developed approximately 3 weeks ago.\n\nThe rash is described as itchy, red, and slightly raised with small bumps.\n\n## Aggravating Factors\n- Heat and humidity worsen symptoms\n- Certain fabrics (specifically synthetic materials) increase itchiness\n- Stress appears to trigger flare-ups\n\n## Attempted Treatments\n- OTC hydrocortisone cream (minimal effect)\n- Cold compresses (temporary relief from itching)\n- Antihistamines (slight improvement)\n\n## Environmental Changes\n- Recently moved to a new apartment\n- Changed laundry detergent 1 month ago\n- New workplace with different ventilation system\n\n## Previous Dermatological History\nNo previous skin conditions other than occasional mild acne.",
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-    status: 'PENDING',
-    obfuscatedUser: {
-      id: '507f1f77bcf86cd799439020',
-      age: 29,
-      sex: false,
-      activityLevel: null, // Omitted activity level
-      allergies: [], // Empty allergies
-      healthIssues: null, // Omitted health issues
-      diet: null // Omitted diet information
-    }
-  },
-  {
-    id: '507f1f77bcf86cd799439021',
-    body: "# Sleep Disorder Assessment\n\nPatient reports **chronic insomnia** with both sleep initiation and maintenance difficulties for the past 6 months.\n\nTypically takes 1-2 hours to fall asleep and wakes 3-4 times throughout the night, often staying awake for 30+ minutes.\n\n## Sleep Hygiene Assessment\n- Regular sleep/wake schedule attempted but difficult to maintain\n- Bedroom is dark and cool\n- No screen time 1 hour before bed\n- No caffeine after noon\n\n## Daytime Symptoms\n- Excessive daytime fatigue\n- Difficulty concentrating at work\n- Irritability and mood changes\n- Occasional headaches\n\n## Previous Interventions\n- Melatonin supplements (limited effect)\n- Sleep meditation apps (somewhat helpful for initial sleep)\n- White noise machine (helps with staying asleep)\n\n## Relevant Psychosocial Factors\nReports high job stress and recent divorce proceedings contributing to nighttime rumination.",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-    status: 'REVIEWED',
-    obfuscatedUser: {
-      id: '507f1f77bcf86cd799439022',
-      age: null, // Omitted age
-      sex: null, // Omitted sex
-      activityLevel: null, // Omitted activity level
-      allergies: null, // Omitted allergies
-      healthIssues: ['DEPRESSION', 'ANXIETY', 'INSOMNIA'],
-      diet: [] // Empty diet info
-    }
-  }
-];
-
 // OmittedDataField component for consistent rendering
 const OmittedDataField = ({
   reportId,
@@ -125,18 +30,46 @@ const OmittedDataField = ({
   field: string;
   onRequest: (reportId: string, field: string) => void;
   status: 'PENDING' | 'APPROVED' | 'DENIED' | null;
-}) => (
-  <div className="flex items-center justify-between">
-    <div className="bg-black text-white px-2 py-1 text-xs rounded">DATA OMITTED</div>
-    <button
-      onClick={() => onRequest(reportId, field)}
-      className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded cursor-pointer transition-colors"
-      disabled={status === 'PENDING'}
-    >
-      {status === 'PENDING' ? 'Request Sent' : 'Request Access'}
-    </button>
-  </div>
-);
+}) => {
+  if (status === 'APPROVED') {
+    return (
+      <div className="flex items-center justify-between">
+        <div className="bg-green-100 text-green-800 px-2 py-1 text-xs rounded flex items-center">
+          <span className="mr-1">✓</span> Access Granted
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'DENIED') {
+    return (
+      <div className="flex items-center justify-between">
+        <div className="bg-red-100 text-red-800 px-2 py-1 text-xs rounded flex items-center">
+          <span className="mr-1">✕</span> Access Denied
+        </div>
+        <button
+          onClick={() => onRequest(reportId, field)}
+          className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded cursor-pointer transition-colors"
+        >
+          Request Again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="bg-black text-white px-2 py-1 text-xs rounded">DATA OMITTED</div>
+      <button
+        onClick={() => onRequest(reportId, field)}
+        className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded cursor-pointer transition-colors"
+        disabled={status === 'PENDING'}
+      >
+        {status === 'PENDING' ? 'Request Sent' : 'Request Access'}
+      </button>
+    </div>
+  );
+};
 
 export default function DoctorDashboard() {
   const { user, isLoaded: isUserLoaded } = useUser();
@@ -157,17 +90,10 @@ export default function DoctorDashboard() {
       }
 
       try {
-        const { reports: doctorReports, error } = await getReportsForDoctor(user.id);
-
-        if (error || !doctorReports || doctorReports.length === 0) {
-          // Fallback to mock data if no reports or error
-          setReports(mockReports);
-        } else {
-          setReports(doctorReports);
-        }
+        const { reports: doctorReports } = await getReportsForDoctor(user.id);
+        setReports(doctorReports);
       } catch (error) {
         console.error("Error loading reports:", error);
-        setReports(mockReports);
       } finally {
         setLoading(false);
       }
@@ -237,11 +163,20 @@ export default function DoctorDashboard() {
 
     const sendAccessRequest = async () => {
       try {
-        // TODO: request logic
-        setTimeout(() => {
-          console.log(`Access requested for ${field} in report ${reportId}`);
-        }, 500);
+        if (!selectedReport) return;
 
+        const { success, dataRequest, error } = await createDataRequest(
+          reportId,
+          user?.id || '',
+          selectedReport.patientId,
+          field
+        );
+
+        if (!success || error) {
+          throw new Error(error || 'Failed to create data request');
+        }
+
+        console.log(`Access requested for ${field} in report ${reportId}`);
       } catch (error) {
         console.error("Error requesting access:", error);
         setAccessRequestStatus(prev => ({
@@ -254,15 +189,10 @@ export default function DoctorDashboard() {
     sendAccessRequest();
   };
 
-  const hasAccessToField = (reportId: string, field: string) => {
-    return requestedDataAccess[reportId]?.[field] || false;
-  };
-
   const getFieldRequestStatus = (reportId: string, field: string) => {
     return accessRequestStatus[reportId]?.[field] || null;
   };
 
-  // Check if field is omitted (null, undefined, or empty array)
   const isFieldOmitted = (value: any) => {
     return value === null ||
            value === undefined ||
@@ -361,14 +291,14 @@ export default function DoctorDashboard() {
         setModalOpen(open);
         if (!open) setSelectedReportId(null);
       }}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[90vw] md:max-w-[90vw] lg:max-w-[1400px] h-[90vh] p-0 overflow-hidden">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[90vw] md:max-w-[90vw] lg:max-w-[1400px] h-[90vh] max-h-[90vh] p-0 overflow-hidden flex flex-col">
           {selectedReport && (
             <>
-              <DialogHeader className="px-6 pt-4 bg-gray-50 border-b sticky top-0 z-10">
+              <DialogHeader className="px-6 pt-4 bg-gray-50 border-b sticky top-0 z-10 flex-shrink-0">
                 <div className="flex justify-between items-center">
                   <div>
                     <DialogTitle className="text-2xl font-semibold">Report #{selectedReport.id}</DialogTitle>
-                    <DialogDescription className="flex items-center gap-3 mt-1">
+                    <DialogDescription className="flex flex-wrap items-center gap-3 mt-1">
                       Submitted on {new Date(selectedReport.createdAt).toLocaleDateString()} •
                       <Badge variant={selectedReport.status === 'PENDING' ? 'secondary' : 'default'}>
                         {selectedReport.status}
@@ -429,10 +359,10 @@ export default function DoctorDashboard() {
                 </div>
               </DialogHeader>
 
-              <div className="overflow-auto h-full pb-16">
-                <div className="grid grid-cols-1 md:grid-cols-2 h-full">
+              <div className="overflow-auto flex-grow">
+                <div className="grid grid-cols-1 md:grid-cols-2 min-h-full">
                   {/* Left side - Report content */}
-                  <div className="p-6 border-r">
+                  <div className="p-6 border-b md:border-b-0 md:border-r">
                     <div className="prose prose-slate max-w-none">
                       <ReactMarkdown components={MarkdownComponents}>
                         {selectedReport.body}
@@ -441,7 +371,7 @@ export default function DoctorDashboard() {
                   </div>
 
                   {/* Right side - Patient information */}
-                  <div className="p-6 overflow-y-auto">
+                  <div className="p-6">
                     <h2 className="text-xl font-semibold mb-4">Patient Information</h2>
                     <div className="space-y-6">
                       {/* Demographics Section */}
