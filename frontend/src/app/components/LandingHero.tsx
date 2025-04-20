@@ -104,8 +104,8 @@ export default function LandingHero() {
           </div>
 
           {/* AI Assistant Demo Card */}
-          <div className="relative">
-            <Card className="shadow-lg">
+          <div>
+            <Card className="shadow-lg border-blue-100">
               <CardHeader className="flex flex-row items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
                   <svg
@@ -145,9 +145,6 @@ export default function LandingHero() {
                 </div>
               </CardContent>
             </Card>
-
-            <div className="hidden md:block absolute -top-6 -right-6 w-24 h-24 bg-yellow-100 rounded-full z-0"></div>
-            <div className="hidden md:block absolute -bottom-6 -left-6 w-32 h-32 bg-blue-100 rounded-full z-0"></div>
           </div>
         </div>
       </div>
