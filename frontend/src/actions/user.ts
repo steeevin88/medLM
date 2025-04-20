@@ -51,6 +51,40 @@ export async function updateDoctorData(doctorId: string, data: any) {
   });
 }
 
+export async function createDoctor(userId: string, doctorData: DoctorData) {
+  try {
+    const requiredFields = ['sex', 'age', 'location', 'fieldOfStudy'] as const;
+    const missingFields = requiredFields.filter(field => doctorData[field] === undefined);
+
+    if (missingFields.length > 0) throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+
+    const input = {
+      id: userId,
+      sex: doctorData.sex as boolean,
+      age: doctorData.age as number,
+      location: doctorData.location as string,
+      fieldOfStudy: doctorData.fieldOfStudy as string,
+      firstName: doctorData.firstName,
+      lastName: doctorData.lastName,
+      email: doctorData.email,
+      specialization: doctorData.specialization,
+      yearsExperience: doctorData.yearsExperience,
+      licenseNumber: doctorData.licenseNumber,
+      hospital: doctorData.hospital,
+      bio: doctorData.bio,
+    };
+
+    const newDoctor = await prisma.doctor.create({
+      data: input,
+    });
+
+    return { success: true, doctor: newDoctor, error: null };
+  } catch (error) {
+    console.error("Error creating doctor profile:", error);
+    return { success: false, doctor: null, error: "Failed to create doctor profile" };
+  }
+}
+
 // Doctor report actions
 export async function getReportsForDoctor(doctorId: string) {
   try {
