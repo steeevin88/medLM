@@ -94,6 +94,28 @@ export async function getReportById(reportId: string) {
   }
 }
 
+export async function createReportWithObfuscatedUser(report: any, obfuscatedUser: any) {
+  try {
+    // Create the report first
+    const createdReport = await prisma.report.create({
+      data: {
+        ...report,
+        obfuscatedUser: {
+          create: obfuscatedUser
+        }
+      },
+      include: {
+        obfuscatedUser: true
+      }
+    });
+
+    return { success: true, report: createdReport, error: null };
+  } catch (error) {
+    console.error("Error creating report:", error);
+    return { success: false, report: null, error: "Failed to create report" };
+  }
+}
+
 export async function updateReportStatus(reportId: string, status: 'PENDING' | 'REVIEWED' | 'RESPONDED') {
   try {
     const updatedReport = await prisma.report.update({

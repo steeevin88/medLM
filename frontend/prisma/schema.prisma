@@ -71,8 +71,9 @@ model ObfuscatedUser {
   healthIssues   HealthIssue[]
   diet           Diet[]
 
-  // Relations
-  reports        Report[]
+  // This model is now created for a single report
+  report         Report?       @relation(fields: [reportId], references: [id])
+  reportId       String?       @unique @db.ObjectId
 }
 
 model Report {
@@ -81,9 +82,8 @@ model Report {
   createdAt      DateTime      @default(now())
   status         ReportStatus  @default(PENDING)
 
-  // Patient (anonymized)
-  obfuscatedUser ObfuscatedUser @relation(fields: [obfuscatedUserId], references: [id])
-  obfuscatedUserId String
+  // Patient (anonymized) - now a one-to-one relation
+  obfuscatedUser ObfuscatedUser?
 
   // Original patient (for internal reference)
   patient        Patient        @relation("PatientReports", fields: [patientId], references: [id])
