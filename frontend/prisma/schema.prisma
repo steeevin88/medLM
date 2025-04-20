@@ -77,19 +77,19 @@ model Prescription {
   type           PrescriptionType
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  
+
   // Comparison data
   avgDosage      String?
   isBelow        Boolean?
   comparisonNotes String?
-  
+
   // Warnings as an array of strings
   warnings       String[]
-  
+
   // Relations
   patient        Patient      @relation("PatientPrescriptions", fields: [patientId], references: [id])
   patientId      String
-  
+
   prescribedBy   Doctor       @relation("DoctorPrescriptions", fields: [doctorId], references: [id])
   doctorId       String
 }
@@ -104,9 +104,8 @@ model ObfuscatedUser {
   healthIssues   HealthIssue[]
   diet           Diet[]
 
-  // This model is now created for a single report
-  report         Report?       @relation(fields: [reportId], references: [id])
-  reportId       String?       @unique @db.ObjectId
+  // One-to-one relation with Report
+  report         Report?
 }
 
 model Report {
@@ -125,6 +124,9 @@ model Report {
   // Doctor receiving the report
   doctor         Doctor         @relation("DoctorReports", fields: [doctorId], references: [id])
   doctorId       String
+
+  // Data requests associated with this report
+  dataRequests   DataRequest[]
 }
 
 enum ActivityLevel {
@@ -177,12 +179,6 @@ enum Diet {
   OTHER
 }
 
-enum ReportStatus {
-  PENDING
-  REVIEWED
-  RESPONDED
-}
-
 enum PrescriptionStatus {
   ACTIVE
   EXPIRED
@@ -201,3 +197,15 @@ enum PrescriptionType {
   OTHER
 }
 
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESPONDED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
