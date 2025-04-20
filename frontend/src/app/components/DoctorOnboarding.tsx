@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -8,56 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { createDoctor } from "@/actions/user";
 
-// Define enums for the form
-const SPECIALIZATIONS = [
-  { value: "cardiology", label: "Cardiology" },
-  { value: "dermatology", label: "Dermatology" },
-  { value: "endocrinology", label: "Endocrinology" },
-  { value: "gastroenterology", label: "Gastroenterology" },
-  { value: "neurology", label: "Neurology" },
-  { value: "oncology", label: "Oncology" },
-  { value: "pediatrics", label: "Pediatrics" },
-  { value: "psychiatry", label: "Psychiatry" },
-  { value: "radiology", label: "Radiology" },
-  { value: "surgery", label: "Surgery" },
-  { value: "other", label: "Other" },
-] as const;
-
-const FIELDS_OF_STUDY = [
-  { value: "generalmedicine", label: "General Medicine" },
-  { value: "internalmedicine", label: "Internal Medicine" },
-  { value: "surgery", label: "Surgery" },
-  { value: "pediatrics", label: "Pediatrics" },
-  { value: "obgyn", label: "Obstetrics and Gynecology" },
-  { value: "psychiatry", label: "Psychiatry" },
-  { value: "neurology", label: "Neurology" },
-  { value: "radiology", label: "Radiology" },
-  { value: "anesthesiology", label: "Anesthesiology" },
-  { value: "pathology", label: "Pathology" },
-  { value: "dermatology", label: "Dermatology" },
-  { value: "ophthalmology", label: "Ophthalmology" },
-  { value: "other", label: "Other" },
-] as const;
-
-// Create a schema for form validation
 const formSchema = z.object({
   sex: z.enum(["male", "female", "other"]),
   age: z.coerce.number().int().positive().max(120),
   location: z.string().min(2, { message: "Location must be at least 2 characters" }),
-  fieldOfStudy: z.enum([
-    "generalmedicine", "internalmedicine", "surgery", "pediatrics",
-    "obgyn", "psychiatry", "neurology", "radiology", "anesthesiology",
-    "pathology", "dermatology", "ophthalmology", "other"
-  ]),
-  specialization: z.enum([
-    "cardiology", "dermatology", "endocrinology", "gastroenterology",
-    "neurology", "oncology", "pediatrics", "psychiatry", "radiology",
-    "surgery", "other"
-  ]),
+  fieldOfStudy: z.string().min(2, { message: "Field of study must be at least 2 characters" }),
+  specialization: z.string().min(2, { message: "Specialization must be at least 2 characters" }),
   yearsExperience: z.coerce.number().int().min(0).optional(),
   licenseNumber: z.string().optional(),
   hospital: z.string().optional(),
@@ -67,13 +29,18 @@ const formSchema = z.object({
 type ProfileFormValues = z.infer<typeof formSchema>;
 
 export default function DoctorOnboarding() {
-  // Define default values for the form
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
   const defaultValues: Partial<ProfileFormValues> = {
     sex: "male",
     age: undefined,
     location: "",
-    fieldOfStudy: "generalmedicine",
-    specialization: "cardiology",
+    fieldOfStudy: "",
+    specialization: "",
     yearsExperience: undefined,
     licenseNumber: "",
     hospital: "",
@@ -85,10 +52,56 @@ export default function DoctorOnboarding() {
     defaultValues,
   });
 
-  function onSubmit(data: ProfileFormValues) {
-    console.log(data);
-    // In a real app, you would save this to the database
-    alert("Doctor profile saved successfully!");
+  async function onSubmit(data: ProfileFormValues) {
+    if (!isUserLoaded || !user) {
+      setError("You must be logged in to create a doctor profile");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const sex = data.sex === "male" ? true : data.sex === "female" ? false : undefined;
+
+      if (sex === undefined) {
+        setError("Please select male or female for biological sex");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const doctorData = {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.primaryEmailAddress?.emailAddress,
+        sex,
+        age: data.age,
+        location: data.location,
+        fieldOfStudy: data.fieldOfStudy,
+        specialization: data.specialization,
+        yearsExperience: data.yearsExperience,
+        licenseNumber: data.licenseNumber,
+        hospital: data.hospital,
+        bio: data.bio,
+      };
+
+      const result = await createDoctor(user.id, doctorData);
+
+      if (result.success) {
+        setSuccess("Your doctor profile has been created successfully!");
+        setTimeout(() => {
+          router.push("/doctor");
+        }, 2000);
+      } else {
+        throw new Error(result.error || "Failed to create doctor profile");
+      }
+    } catch (err) {
+      console.error("Error creating doctor profile:", err);
+      setError("There was an error creating your profile. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -100,6 +113,18 @@ export default function DoctorOnboarding() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+            <p className="text-red-700">{error}</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6">
+            <p className="text-green-700">{success}</p>
+          </div>
+        )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -200,20 +225,12 @@ export default function DoctorOnboarding() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Field of Study</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your field of study" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {FIELDS_OF_STUDY.map((fieldOption) => (
-                        <SelectItem key={fieldOption.value} value={fieldOption.value}>
-                          {fieldOption.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormDescription>
+                    Your primary medical field (e.g., Internal Medicine, Surgery, Psychiatry)
+                  </FormDescription>
+                  <FormControl>
+                    <Input placeholder="Enter your field of study" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -226,20 +243,12 @@ export default function DoctorOnboarding() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Specialization</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your specialization" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {SPECIALIZATIONS.map((spec) => (
-                        <SelectItem key={spec.value} value={spec.value}>
-                          {spec.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormDescription>
+                    Your specific area of expertise (e.g., Cardiology, Dermatology, Oncology)
+                  </FormDescription>
+                  <FormControl>
+                    <Input placeholder="Enter your specialization" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -303,7 +312,9 @@ export default function DoctorOnboarding() {
               )}
             />
 
-            <Button type="submit" className="w-full">Save Profile</Button>
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Profile"}
+            </Button>
           </form>
         </Form>
       </CardContent>
