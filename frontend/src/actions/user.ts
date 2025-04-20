@@ -63,7 +63,6 @@ export async function createPatient(userId: string, patientData: PatientData) {
     let result;
     if (existingPatient) {
       // Update existing patient - remove id from data when updating
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id: _, ...updateData } = input;
       result = await prisma.patient.update({
         where: { id: userId },
