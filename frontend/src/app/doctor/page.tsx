@@ -4,31 +4,14 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import DoctorDashboard from "../components/DoctorDashboard";
+import { handleRoleRedirects } from "@/utils/roles";
 
 export default function DoctorPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoaded) {
-      // Redirect to homepage if not signed in
-      if (!user) {
-        router.push('/');
-        return;
-      }
-      
-      // Redirect to role selection if no role set
-      if (!user.publicMetadata?.role) {
-        router.push('/select-role');
-        return;
-      }
-      
-      // Redirect to patient dashboard if user is a patient
-      if (user.publicMetadata.role !== 'doctor') {
-        router.push('/patient');
-        return;
-      }
-    }
+    handleRoleRedirects(user, isLoaded, 'doctor', router);
   }, [isLoaded, user, router]);
 
   if (!isLoaded || !user) {
@@ -48,4 +31,4 @@ export default function DoctorPage() {
       <DoctorDashboard />
     </div>
   );
-} 
+}

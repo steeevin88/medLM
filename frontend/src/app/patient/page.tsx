@@ -11,6 +11,7 @@ import HealthVitals from "../components/HealthVitals";
 import ActivityExercise from "../components/ActivityExercise";
 import Appointments from "../components/Appointments";
 import { Card, CardContent } from "@/components/ui/card";
+import { handleRoleRedirects } from "@/utils/roles";
 
 export default function PatientPage() {
   const { user, isLoaded } = useUser();
@@ -18,25 +19,7 @@ export default function PatientPage() {
   const [activeTab, setActiveTab] = useState('chat');
 
   useEffect(() => {
-    if (isLoaded) {
-      // Redirect to homepage if not signed in
-      if (!user) {
-        router.push('/');
-        return;
-      }
-      
-      // Redirect to role selection if no role set
-      if (!user.publicMetadata?.role) {
-        router.push('/select-role');
-        return;
-      }
-      
-      // Redirect to doctor dashboard if user is a doctor
-      if (user.publicMetadata.role !== 'patient') {
-        router.push('/doctor');
-        return;
-      }
-    }
+    handleRoleRedirects(user, isLoaded, 'patient', router);
   }, [isLoaded, user, router]);
 
   const renderActiveTabContent = () => {
@@ -85,12 +68,12 @@ export default function PatientPage() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-6rem)]">
         {/* Left sidebar with navigation */}
         <div className="md:col-span-3 lg:col-span-2 h-auto md:h-full">
-          <PatientNavigation 
-            activeTab={activeTab} 
-            onTabChange={setActiveTab} 
+          <PatientNavigation
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
           />
         </div>
-        
+
         {/* Main content area */}
         <div className="md:col-span-9 lg:col-span-10 h-auto md:h-full overflow-hidden">
           <div className="h-full overflow-hidden">
@@ -100,4 +83,4 @@ export default function PatientPage() {
       </div>
     </div>
   );
-} 
+}
