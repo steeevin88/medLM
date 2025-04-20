@@ -1,19 +1,47 @@
 "use client";
 
-import React from 'react';
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { createPatient } from "@/actions/user";
+import {
+  ActivityLevel,
+  Allergy,
+  Diet,
+  Medication,
+  Patient,
+} from "@prisma/client";
+import { useUser } from "@clerk/nextjs";
 
-// Define enums for the form
 const ALLERGIES = [
   { id: "peanuts", label: "Peanuts" },
   { id: "shellfish", label: "Shellfish" },
@@ -62,15 +90,113 @@ const formSchema = z.object({
   medications: z.array(z.string()).optional(),
   medicalHistory: z.array(z.string()).optional(),
   additionalMedicalHistory: z.string().optional(),
-  diet: z.enum(["regular", "vegetarian", "vegan", "keto", "lowcarb", "glutenfree", "dairyfree"]),
-  activityLevel: z.enum(["sedentary", "light", "moderate", "active", "veryactive"]),
+  diet: z.enum([
+    "regular",
+    "vegetarian",
+    "vegan",
+    "keto",
+    "lowcarb",
+    "glutenfree",
+    "dairyfree",
+  ]),
+  activityLevel: z.enum([
+    "sedentary",
+    "light",
+    "moderate",
+    "active",
+    "veryactive",
+  ]),
   additionalInfo: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof formSchema>;
 
+function mapActivityLevel(level: string): ActivityLevel {
+  switch (level) {
+    case "sedentary":
+      return "LOW";
+    case "light":
+    case "moderate":
+      return "MEDIUM";
+    case "active":
+    case "veryactive":
+      return "HIGH";
+    default:
+      return "LOW";
+  }
+}
+
+function mapDiet(diet: string): Diet {
+  switch (diet) {
+    case "vegetarian":
+      return "VEGETARIAN";
+    case "vegan":
+      return "VEGAN";
+    case "keto":
+      return "KETO";
+    case "lowcarb":
+      return "LOW_CARB";
+    case "glutenfree":
+      return "GLUTEN_FREE";
+    case "dairyfree":
+      return "DAIRY_FREE";
+    default:
+      return "OTHER";
+  }
+}
+
+function mapAllergies(allergies: string[]): Allergy[] {
+  return [...allergies].map((allergy) => {
+    switch (allergy) {
+      case "dairy":
+        return Allergy.DAIRY;
+      case "eggs":
+        return Allergy.EGGS;
+      case "gluten":
+        return Allergy.GLUTEN;
+      case "lactose":
+        return Allergy.LACTOSE;
+      case "latex":
+        return Allergy.LATEX;
+      case "nuts":
+        return Allergy.NUTS;
+      case "peanuts":
+        return Allergy.PEANUTS;
+      case "pollen":
+        return Allergy.POLLEN;
+      case "seafood":
+        return Allergy.SEAFOOD;
+      case "soy":
+        return Allergy.SOY;
+      default:
+        return Allergy.OTHER;
+    }
+  });
+}
+
+function mapMedications(medications: string[]): Medication[] {
+  return [...medications].map((medication) => {
+    switch (medication) {
+      case "antibiotics":
+        return Medication.ANTIBIOTICS;
+      case "antihistamines":
+        return Medication.ANTIBIOTICS;
+      case "antidepressants":
+        return Medication.OTHER;
+      case "painkillers":
+        return Medication.IBUPROFEN;
+      case "bloodpressure":
+        return Medication.BLOOD_PRESSURE_MEDICATION;
+      case "diabetes":
+        return Medication.INSULIN;
+      case "other":
+      default:
+        return Medication.OTHER;
+    }
+  });
+}
+
 export default function PatientOnboarding() {
-  // Define default values for the form
   const defaultValues: Partial<ProfileFormValues> = {
     sex: "male",
     age: undefined,
@@ -84,16 +210,44 @@ export default function PatientOnboarding() {
     activityLevel: "moderate",
     additionalInfo: "",
   };
-
+  const { user, isLoaded } = useUser();
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
 
   function onSubmit(data: ProfileFormValues) {
-    console.log(data);
-    // In a real app, you would save this to the database
-    alert("Profile saved successfully!");
+    if (!isLoaded || !user) return;
+
+    const patientData = {
+      sex: data.sex === "male",
+      age: data.age,
+      height: data.height,
+      weight: data.weight,
+      activityLevel: mapActivityLevel(data.activityLevel),
+      allergies: mapAllergies(data.allergies ?? []),
+      medications: mapMedications(data.medications ?? []),
+      diet: [mapDiet(data.diet)],
+      additionalInfo: data.additionalInfo,
+      firstName: user.firstName ?? null,
+      lastName: user.lastName ?? null,
+      email: user.primaryEmailAddress?.emailAddress ?? null,
+      healthIssues: [],
+      heartRate: null,
+      bloodPressure: null,
+    };
+
+    createPatient(user.id, patientData)
+      .then((result) => {
+        if (result.success) {
+          window.location.href = "/patient";
+        } else {
+          console.error(result.error);
+        }
+      })
+      .catch((err) => {
+        console.error("Error creating patient profile:", err);
+      });
   }
 
   return (
@@ -125,25 +279,19 @@ export default function PatientOnboarding() {
                           <FormControl>
                             <RadioGroupItem value="male" />
                           </FormControl>
-                          <FormLabel className="font-normal">
-                            Male
-                          </FormLabel>
+                          <FormLabel className="font-normal">Male</FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-3 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="female" />
                           </FormControl>
-                          <FormLabel className="font-normal">
-                            Female
-                          </FormLabel>
+                          <FormLabel className="font-normal">Female</FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-3 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="other" />
                           </FormControl>
-                          <FormLabel className="font-normal">
-                            Other
-                          </FormLabel>
+                          <FormLabel className="font-normal">Other</FormLabel>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
@@ -227,7 +375,10 @@ export default function PatientOnboarding() {
                                   checked={field.value?.includes(item.id)}
                                   onCheckedChange={(checked: boolean) => {
                                     return checked
-                                      ? field.onChange([...field.value || [], item.id])
+                                      ? field.onChange([
+                                          ...(field.value || []),
+                                          item.id,
+                                        ])
                                       : field.onChange(
                                           field.value?.filter(
                                             (value) => value !== item.id
@@ -257,7 +408,9 @@ export default function PatientOnboarding() {
               render={() => (
                 <FormItem>
                   <div className="mb-4">
-                    <FormLabel className="text-base">Current Medications</FormLabel>
+                    <FormLabel className="text-base">
+                      Current Medications
+                    </FormLabel>
                     <FormDescription>
                       Select any medications you are currently taking.
                     </FormDescription>
@@ -279,7 +432,10 @@ export default function PatientOnboarding() {
                                   checked={field.value?.includes(item.id)}
                                   onCheckedChange={(checked: boolean) => {
                                     return checked
-                                      ? field.onChange([...field.value || [], item.id])
+                                      ? field.onChange([
+                                          ...(field.value || []),
+                                          item.id,
+                                        ])
                                       : field.onChange(
                                           field.value?.filter(
                                             (value) => value !== item.id
@@ -331,7 +487,10 @@ export default function PatientOnboarding() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Diet</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select your diet type" />
@@ -357,7 +516,10 @@ export default function PatientOnboarding() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Physical Activity Level</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select your activity level" />
@@ -395,10 +557,12 @@ export default function PatientOnboarding() {
               )}
             />
 
-            <Button type="submit" className="w-full">Save Profile</Button>
+            <Button type="submit" className="w-full">
+              Save Profile
+            </Button>
           </form>
         </Form>
       </CardContent>
     </Card>
   );
-} 
+}
