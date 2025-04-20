@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +10,6 @@ import { sendDoctorReport } from "@/actions/report";
 type Step = "compose" | "select-doctor";
 
 export default function SendDoctorReport() {
-  const router = useRouter();
   const [reportBody, setReportBody] = useState("");
   const [currentStep, setCurrentStep] = useState<Step>("compose");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,7 +20,6 @@ export default function SendDoctorReport() {
       return;
     }
 
-    // Move to doctor selection step
     setCurrentStep("select-doctor");
   };
 
@@ -62,7 +59,6 @@ export default function SendDoctorReport() {
     setIsSubmitting(true);
 
     try {
-      // Send report using the server action
       const result = await sendDoctorReport({
         reportBody,
         doctorId,
@@ -72,7 +68,6 @@ export default function SendDoctorReport() {
         throw new Error(result.error || "Failed to send report");
       }
 
-      // Redirect to success page or reset form
       alert("Report sent successfully!");
       setReportBody("");
       setCurrentStep("compose");
@@ -94,7 +89,6 @@ export default function SendDoctorReport() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* This would be replaced with actual doctor data from API */}
           <DoctorList onSelect={handleDoctorSelect} />
         </div>
       </CardContent>
@@ -111,13 +105,11 @@ export default function SendDoctorReport() {
   );
 }
 
-// Placeholder component for doctor selection
 function DoctorList({ onSelect }: { onSelect: (doctorId: string) => void }) {
   const [loading, setLoading] = useState(true);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch doctors using the server action
   useEffect(() => {
     const fetchDoctors = async () => {
       try {

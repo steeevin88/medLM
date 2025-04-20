@@ -7,8 +7,7 @@ import ChatInterface, { ChatMessage } from "./ChatInterface";
 export default function MedLMAssistantChat() {
   const { user } = useUser();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  
-  // Add initial welcome message when component mounts
+
   useEffect(() => {
     if (messages.length === 0) {
       setMessages([{
@@ -21,7 +20,6 @@ export default function MedLMAssistantChat() {
     }
   }, [messages.length]);
 
-  // Helper to get current time in 12-hour format
   const getCurrentTime = () => {
     const now = new Date();
     let hours = now.getHours();
@@ -33,7 +31,6 @@ export default function MedLMAssistantChat() {
   };
 
   const handleSendMessage = (message: string) => {
-    // Add user message
     const userMessage: ChatMessage = {
       id: messages.length + 1,
       sender: 'patient',
@@ -41,10 +38,9 @@ export default function MedLMAssistantChat() {
       message: message,
       timestamp: getCurrentTime(),
     };
-    
+
     setMessages(prev => [...prev, userMessage]);
-    
-    // Simulate AI response
+
     setTimeout(() => {
       const aiResponse: ChatMessage = {
         id: messages.length + 2,
@@ -53,15 +49,14 @@ export default function MedLMAssistantChat() {
         message: getAIResponse(message),
         timestamp: getCurrentTime(),
       };
-      
+
       setMessages(prev => [...prev, aiResponse]);
     }, 1000);
   };
 
-  // Simple AI response generator - in a real app, this would call an API
   const getAIResponse = (userMessage: string): string => {
     const lowerCaseMessage = userMessage.toLowerCase();
-    
+
     if (lowerCaseMessage.includes('headache') || lowerCaseMessage.includes('head pain')) {
       return "I'm sorry to hear you're experiencing headaches. How long have you been having them? Are they accompanied by any other symptoms like nausea or sensitivity to light?";
     } else if (lowerCaseMessage.includes('sleep') || lowerCaseMessage.includes('insomnia')) {
@@ -79,7 +74,6 @@ export default function MedLMAssistantChat() {
     }
   };
 
-  // Get user initials for avatar fallback (if needed)
   const getUserInitials = () => {
     if (!user) return "?";
     const firstInitial = user.firstName?.[0] || '';
@@ -103,4 +97,4 @@ export default function MedLMAssistantChat() {
       }}
     />
   );
-} 
+}

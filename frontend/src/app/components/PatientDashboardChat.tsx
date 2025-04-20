@@ -13,7 +13,7 @@ export default function PatientDashboardChat() {
   const { user } = useUser();
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Dummy data for chat contacts
   const chatContacts = [
     {
@@ -84,12 +84,12 @@ export default function PatientDashboardChat() {
 
   const handleSendMessage = (message: string) => {
     if (!selectedChat) return;
-    
+
     // Add the new message to chat history
     setChatHistories(prev => {
       const currentChat = prev[selectedChat] || [];
       const newId = currentChat.length > 0 ? Math.max(...currentChat.map(msg => msg.id)) + 1 : 1;
-      
+
       // Create new message with proper types
       const newMsg: ChatMessage = {
         id: newId,
@@ -98,31 +98,31 @@ export default function PatientDashboardChat() {
         message: message,
         timestamp: getCurrentTime()
       };
-      
+
       const updatedChat = [...currentChat, newMsg];
-      
+
       // Simulate AI response after a short delay
       setTimeout(() => {
         const aiResponseId = updatedChat.length > 0 ? Math.max(...updatedChat.map(msg => msg.id)) + 1 : 1;
-        
+
         // Create AI or doctor response based on the chat ID
         const aiResponse: ChatMessage = {
           id: aiResponseId,
           sender: selectedChat === 3 ? 'ai' : 'doctor',
-          senderName: selectedChat === 3 ? 'MedAI' : 
+          senderName: selectedChat === 3 ? 'MedAI' :
                      selectedChat === 1 ? 'Dr. Sarah Johnson' : 'Dr. Michael Chen',
-          message: selectedChat === 3 ? 
-                   "I'll analyze your message and provide assistance shortly." : 
+          message: selectedChat === 3 ?
+                   "I'll analyze your message and provide assistance shortly." :
                    "Thank you for your message. I'll get back to you as soon as possible.",
           timestamp: getCurrentTime()
         };
-        
+
         setChatHistories(prevChats => ({
           ...prevChats,
           [selectedChat]: [...prevChats[selectedChat], aiResponse]
         }));
       }, 1000);
-      
+
       return {
         ...prev,
         [selectedChat]: updatedChat
@@ -131,7 +131,7 @@ export default function PatientDashboardChat() {
   };
 
   // Get filtered contacts based on search query
-  const filteredContacts = chatContacts.filter(contact => 
+  const filteredContacts = chatContacts.filter(contact =>
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -152,9 +152,9 @@ export default function PatientDashboardChat() {
 
   if (selectedChat) {
     const contactInfo = getCurrentContactInfo();
-    
+
     return (
-      <ChatInterface 
+      <ChatInterface
         chatId={selectedChat}
         messages={chatHistories[selectedChat] || []}
         onSendMessage={handleSendMessage}
@@ -207,7 +207,7 @@ export default function PatientDashboardChat() {
             </div>
           ) : (
             filteredContacts.map((contact) => (
-              <div 
+              <div
                 key={contact.id}
                 onClick={() => setSelectedChat(contact.id)}
                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
@@ -239,4 +239,4 @@ export default function PatientDashboardChat() {
       </CardContent>
     </Card>
   );
-} 
+}

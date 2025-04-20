@@ -220,7 +220,6 @@ export default function PatientOnboarding() {
     defaultValues,
   });
 
-  // Fetch patient data on component mount
   useEffect(() => {
     async function fetchPatientData() {
       if (!isLoaded || !user) return;
@@ -229,19 +228,13 @@ export default function PatientOnboarding() {
         const result = await getPatientByUserId(user.id);
 
         if (result.success && result.patient) {
-          // Map database values back to form values
           const patient = result.patient;
-
-          // Convert boolean sex to string
           const sexValue = patient.sex ? "male" : "female";
-
-          // Map activity level enum back to form value
           let activityLevelValue = "moderate";
           if (patient.activityLevel === "LOW") activityLevelValue = "sedentary";
           else if (patient.activityLevel === "MEDIUM") activityLevelValue = "moderate";
           else if (patient.activityLevel === "HIGH") activityLevelValue = "active";
 
-          // Map diet enum back to form value (use the first one if there's an array)
           let dietValue = "regular";
           if (patient.diet && patient.diet.length > 0) {
             const dietEnum = patient.diet[0];
@@ -253,7 +246,6 @@ export default function PatientOnboarding() {
             else if (dietEnum === "DAIRY_FREE") dietValue = "dairyfree";
           }
 
-          // Map allergies enum back to string IDs
           const allergiesValue = patient.allergies?.map(allergy => {
             switch (allergy) {
               case "DAIRY": return "dairy";
@@ -265,7 +257,6 @@ export default function PatientOnboarding() {
             }
           }).filter(Boolean) || [];
 
-          // Map medications enum back to string IDs
           const medicationsValue = patient.medications?.map(medication => {
             switch (medication) {
               case "ANTIBIOTICS": return "antibiotics";
@@ -276,7 +267,6 @@ export default function PatientOnboarding() {
             }
           }) || [];
 
-          // Reset form with patient data
           form.reset({
             sex: sexValue as "male" | "female" | "other",
             age: patient.age || undefined,

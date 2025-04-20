@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, RefreshCcw, PlusCircle, MessageSquare, AlertTriangle, CheckCircle, Info } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
-// Mock data for prescriptions
 const prescriptionData = [
   {
     id: 1,
@@ -91,10 +90,10 @@ export default function PatientPrescriptions() {
 
   const currentPrescriptions = prescriptionData.filter(p => p.status === "active");
   const expiredPrescriptions = prescriptionData.filter(p => p.status === "expired");
-  
+
   const renderPrescriptionCard = (prescription: typeof prescriptionData[0]) => {
     const isPainMed = prescription.type === "pain";
-    
+
     return (
       <Card key={prescription.id} className="mb-4">
         <CardHeader className="pb-2">
@@ -144,7 +143,7 @@ export default function PatientPrescriptions() {
                 </div>
               </div>
             </div>
-            
+
             {isPainMed && (
               <div className="bg-blue-50 p-3 rounded-md space-y-3">
                 <div className="flex items-center gap-2">
@@ -171,7 +170,7 @@ export default function PatientPrescriptions() {
                     </div>
                   </div>
                   <p className="text-xs text-blue-800">{prescription.comparison.notes}</p>
-                  
+
                   <div className="pt-2">
                     <Button variant="outline" size="sm" className="w-full text-blue-700 border-blue-200 bg-blue-100 hover:bg-blue-200">
                       <MessageSquare className="mr-2 h-4 w-4" />
@@ -182,12 +181,12 @@ export default function PatientPrescriptions() {
               </div>
             )}
           </div>
-          
+
           <div className="mt-4">
             <p className="text-sm font-medium mb-2">Instructions</p>
             <p className="text-sm">{prescription.instructions}</p>
           </div>
-          
+
           {prescription.warnings && prescription.warnings.length > 0 && (
             <div className="mt-4 p-3 bg-amber-50 rounded-md">
               <div className="flex items-center gap-2 mb-2">
@@ -310,4 +309,4 @@ export default function PatientPrescriptions() {
       </CardContent>
     </Card>
   );
-} 
+}
