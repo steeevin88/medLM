@@ -2,7 +2,8 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react';
 import PatientNavigation from "../components/PatientNavigation";
 import PatientOnboarding from "../components/PatientOnboarding";
 import DocumentUpload from "../components/DocumentUpload";
@@ -15,6 +16,22 @@ import SendDoctorReport from "../components/SendDoctorReport";
 import { Card, CardContent } from "@/components/ui/card";
 import { handleRoleRedirects } from "@/utils/roles";
 
+// Create a client component that uses useSearchParams
+function TabParamManager({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+
+  useEffect(() => {
+    // Set active tab based on URL parameter if present
+    if (tabParam && ['chat', 'profile', 'documents', 'vitals', 'activity',
+                      'appointments', 'prescriptions', 'doctor-report', 'settings'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam, setActiveTab]);
+
+  return null;
+}
+
 export default function PatientPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
@@ -23,6 +40,19 @@ export default function PatientPage() {
   useEffect(() => {
     handleRoleRedirects(user, isLoaded, 'patient', router);
   }, [isLoaded, user, router]);
+
+  // Update URL when active tab changes
+  useEffect(() => {
+    if (activeTab !== 'chat') {
+      router.push(`/patient?tab=${activeTab}`, { scroll: false });
+    } else {
+      router.push('/patient', { scroll: false });
+    }
+  }, [activeTab, router]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+  };
 
   const renderActiveTabContent = () => {
     switch(activeTab) {
@@ -71,12 +101,17 @@ export default function PatientPage() {
 
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+      {/* Suspense boundary for TabParamManager */}
+      <Suspense fallback={null}>
+        <TabParamManager setActiveTab={setActiveTab} />
+      </Suspense>
+
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 min-h-[calc(100vh-6rem)] md:h-[calc(100vh-6rem)]">
         {/* Left sidebar with navigation */}
         <div className="md:col-span-3 lg:col-span-2 mb-4 md:mb-0 md:h-full">
           <PatientNavigation
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
           />
         </div>
 

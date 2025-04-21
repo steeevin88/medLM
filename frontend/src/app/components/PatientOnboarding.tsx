@@ -38,7 +38,6 @@ import {
   Allergy,
   Diet,
   Medication,
-  Patient,
 } from "@prisma/client";
 import { useUser } from "@clerk/nextjs";
 
@@ -276,8 +275,8 @@ export default function PatientOnboarding() {
             medications: medicationsValue,
             medicalHistory: [],
             additionalMedicalHistory: "",
-            diet: dietValue as any,
-            activityLevel: activityLevelValue as any,
+            diet: dietValue as "regular" | "vegetarian" | "vegan" | "keto" | "lowcarb" | "glutenfree" | "dairyfree",
+            activityLevel: activityLevelValue as "sedentary" | "light" | "moderate" | "active" | "veryactive",
             additionalInfo: patient.additionalInfo || "",
           });
         }

@@ -29,6 +29,7 @@ interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
   onBack?: () => void;
   isReadOnly?: boolean;
+  isLoading?: boolean;
   headerInfo?: {
     title: string;
     subtitle?: string;
@@ -38,6 +39,7 @@ interface ChatInterfaceProps {
     }>;
   };
   userInfo?: UserInfo;
+  renderMessage?: (message: string) => React.ReactNode;
 }
 
 export default function ChatInterface({
@@ -46,8 +48,10 @@ export default function ChatInterface({
   onSendMessage,
   onBack,
   isReadOnly = false,
+  isLoading = false,
   headerInfo,
-  userInfo
+  userInfo,
+  renderMessage
 }: ChatInterfaceProps) {
   const [newMessage, setNewMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -69,7 +73,7 @@ export default function ChatInterface({
 
   const handleSendMessage = () => {
     if (!newMessage.trim() || isReadOnly) return;
-    
+
     onSendMessage(newMessage);
     setNewMessage('');
   };
@@ -120,9 +124,9 @@ export default function ChatInterface({
         <CardHeader className="pb-3 border-b flex-shrink-0">
           <div className="flex items-center justify-between">
             {onBack && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={onBack}
                 className="gap-1"
               >
@@ -140,16 +144,16 @@ export default function ChatInterface({
           </div>
         </CardHeader>
       )}
-      
+
       <div className="flex-1 overflow-hidden flex flex-col">
-        <div 
-          ref={scrollAreaRef} 
+        <div
+          ref={scrollAreaRef}
           className="flex-1 px-4 py-2 overflow-y-auto"
         >
           <div className="space-y-4 pb-4">
             {messages.map((msg) => (
-              <div 
-                key={msg.id} 
+              <div
+                key={msg.id}
                 className={`flex gap-3 ${msg.sender === 'patient' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.sender !== 'patient' && (
@@ -164,10 +168,10 @@ export default function ChatInterface({
                   </div>
                   <div className={`rounded-lg p-3 mt-1 ${
                     msg.sender === 'doctor' ? 'bg-blue-50 rounded-tl-none' :
-                    msg.sender === 'ai' ? 'bg-purple-50 rounded-tl-none' : 
+                    msg.sender === 'ai' ? 'bg-purple-50 rounded-tl-none' :
                     'bg-blue-500 text-white rounded-tr-none'
                   }`}>
-                    {msg.message}
+                    {renderMessage ? renderMessage(msg.message) : msg.message}
                   </div>
                 </div>
                 {msg.sender === 'patient' && (
@@ -177,14 +181,29 @@ export default function ChatInterface({
                 )}
               </div>
             ))}
+
+            {isLoading && (
+              <div className="flex gap-3 justify-start">
+                <div className="flex-shrink-0">
+                  <Avatar>
+                    <AvatarFallback className="bg-purple-100 text-purple-800">AI</AvatarFallback>
+                  </Avatar>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-3 rounded-tl-none flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-        
+
         {!isReadOnly ? (
           <div className="p-4 border-t bg-white flex-shrink-0">
             <div className="flex gap-2">
-              <Input 
-                placeholder="Type a message..." 
+              <Input
+                placeholder="Type a message..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -206,4 +225,4 @@ export default function ChatInterface({
       </div>
     </Card>
   );
-} 
+}

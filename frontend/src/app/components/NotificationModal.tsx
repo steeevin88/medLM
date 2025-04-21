@@ -19,10 +19,29 @@ import Link from 'next/link';
 import { getPatientFieldValue, updateDataRequestStatus } from '@/actions/user';
 import { toast } from "sonner";
 
+interface Doctor {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+}
+
+interface Report {
+  id: string;
+  body: string;
+  createdAt: string | Date;
+  status: string;
+}
+
+interface RequestWithRelations extends DataRequest {
+  doctor: Doctor;
+  report: Report;
+}
+
 interface NotificationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  dataRequests: (DataRequest & { doctor: any; report: any })[];
+  dataRequests: RequestWithRelations[];
 }
 
 export function NotificationModal({
@@ -96,9 +115,9 @@ export function NotificationModal({
   );
 }
 
-function RequestCard({ request }: { request: DataRequest & { doctor: any; report: any } }) {
+function RequestCard({ request }: { request: RequestWithRelations }) {
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
-  const [fieldValue, setFieldValue] = useState<any>(null);
+  const [fieldValue, setFieldValue] = useState<unknown>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -217,7 +236,7 @@ function RequestCard({ request }: { request: DataRequest & { doctor: any; report
     }
 
     // Default for strings, numbers, etc.
-    return <p className="text-sm">{fieldValue.toString()}</p>;
+    return <p className="text-sm">{String(fieldValue)}</p>;
   }
 
   return (
@@ -278,7 +297,7 @@ function RequestCard({ request }: { request: DataRequest & { doctor: any; report
           <DialogHeader>
             <DialogTitle>Approve Data Access</DialogTitle>
             <DialogDescription>
-              You're about to share your {request.field} information with Dr. {request.doctor.lastName || 'Unknown'}
+              You&apos;re about to share your {request.field} information with Dr. {request.doctor.lastName || 'Unknown'}
             </DialogDescription>
           </DialogHeader>
 
@@ -297,7 +316,7 @@ function RequestCard({ request }: { request: DataRequest & { doctor: any; report
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Missing Information</AlertTitle>
                 <AlertDescription>
-                  You don't have any {request.field} information stored.{" "}
+                  You don&apos;t have any {request.field} information stored.{" "}
                   <Link href="/patient/health-profile" className="underline font-medium">
                     Update your health profile
                   </Link>{" "}

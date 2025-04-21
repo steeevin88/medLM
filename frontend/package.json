@@ -4,14 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "npx prisma generate"
   },
   "dependencies": {
-    "@clerk/clerk-sdk-node": "^4.13.23",
     "@clerk/nextjs": "^6.16.0",
+    "@google/generative-ai": "^0.24.0",
     "@hookform/resolvers": "^5.0.1",
     "@prisma/client": "6.6.0",
     "@radix-ui/react-accordion": "^1.2.7",
@@ -40,6 +40,7 @@
     "@radix-ui/react-toggle": "^1.1.6",
     "@radix-ui/react-toggle-group": "^1.1.7",
     "@radix-ui/react-tooltip": "^1.2.3",
+    "ai": "^4.3.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -50,9 +51,9 @@
     "mongodb": "^6.15.0",
     "next": "15.3.1",
     "next-themes": "^0.4.6",
-    "react": "^19.0.0",
+    "react": "18.2.0",
     "react-day-picker": "^9.6.7",
-    "react-dom": "^19.0.0",
+    "react-dom": "18.2.0",
     "react-hook-form": "^7.55.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^2.1.7",
@@ -67,13 +68,20 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.17.30",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "18.2.66",
+    "@types/react-dom": "18.2.22",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
+    "lightningcss": "^1.29.3",
     "prisma": "^6.6.0",
-    "tailwindcss": "^4",
+    "tailwindcss": "^4.1.4",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-linux-arm64-musl": "^4.0.1",
+    "@tailwindcss/oxide-linux-x64-musl": "^4.0.1",
+    "lightningcss-linux-arm64-musl": "^1.29.1",
+    "lightningcss-linux-x64-musl": "^1.29.1"
   }
 }

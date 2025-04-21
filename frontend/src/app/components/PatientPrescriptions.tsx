@@ -3,11 +3,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, RefreshCcw, PlusCircle, MessageSquare, AlertTriangle, CheckCircle, Info } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { Calendar, Clock, RefreshCcw, PlusCircle, MessageSquare, AlertTriangle, Info } from "lucide-react";
 
 const prescriptionData = [
   {
@@ -85,8 +83,7 @@ const prescriptionData = [
 ];
 
 export default function PatientPrescriptions() {
-  const { user } = useUser();
-  const [activeTab, setActiveTab] = React.useState("current");
+  const [, setActiveTab] = React.useState("current");
 
   const currentPrescriptions = prescriptionData.filter(p => p.status === "active");
   const expiredPrescriptions = prescriptionData.filter(p => p.status === "expired");
@@ -271,7 +268,7 @@ export default function PatientPrescriptions() {
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-1">No active prescriptions</h3>
                   <p className="text-gray-500 mb-4">
-                    You don't have any active medication prescriptions.
+                    You don&apos;t have any active medication prescriptions.
                   </p>
                   <Button>
                     Request a Prescription
@@ -297,7 +294,7 @@ export default function PatientPrescriptions() {
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-1">No past prescriptions</h3>
                   <p className="text-gray-500 mb-4">
-                    You don't have any expired medication prescriptions.
+                    You don&apos;t have any expired medication prescriptions.
                   </p>
                 </CardContent>
               </Card>

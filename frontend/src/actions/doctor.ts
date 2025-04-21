@@ -1,10 +1,10 @@
 "use server";
 
-import { Doctor } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import prisma from "../lib/db";
 import { DoctorData } from "./user";
 
-export async function uploadDoctorData(doctor: any) {
+export async function uploadDoctorData(doctor: Prisma.DoctorCreateInput) {
   return await prisma.doctor.create({
     data: doctor,
   });
@@ -18,7 +18,7 @@ export async function getDoctorData(doctorId: string) {
   });
 }
 
-export async function updateDoctorData(doctorId: string, data: any) {
+export async function updateDoctorData(doctorId: string, data: Prisma.DoctorCreateInput) {
   return await prisma.doctor.update({
     where: {
       id: doctorId,

@@ -1,12 +1,12 @@
 "use server";
 
-import { Doctor, Patient } from "@prisma/client";
+import { Doctor, Patient, Prisma } from "@prisma/client";
 import prisma from "../lib/db";
 
 export type DoctorData = Partial<Doctor>;
 export type PatientData = Partial<Patient>;
 
-export async function uploadPatientData(patient: any) {
+export async function uploadPatientData(patient: Prisma.PatientCreateInput) {
   return await prisma.patient.create({
     data: patient,
   });
@@ -20,7 +20,7 @@ export async function getPatientData(patientId: string) {
   });
 }
 
-export async function updatePatientData(patientId: string, data: any) {
+export async function updatePatientData(patientId: string, data: Prisma.PatientUpdateInput) {
   return await prisma.patient.update({
     where: {
       id: patientId,
@@ -42,7 +42,7 @@ export async function createPatient(userId: string, patientData: PatientData) {
       age: patientData.age as number,
       height: patientData.height as number,
       weight: patientData.weight as number,
-      activityLevel: patientData.activityLevel as any, // Cast to any to bypass type check since we've validated it exists
+      activityLevel: patientData.activityLevel as 'LOW' | 'MEDIUM' | 'HIGH', // Enum value
       allergies: patientData.allergies || [],
       medications: patientData.medications || [],
       healthIssues: patientData.healthIssues || [],
@@ -63,7 +63,7 @@ export async function createPatient(userId: string, patientData: PatientData) {
     let result;
     if (existingPatient) {
       // Update existing patient - remove id from data when updating
-      const { id, ...updateData } = input;
+      const { id: _, ...updateData } = input;
       result = await prisma.patient.update({
         where: { id: userId },
         data: updateData,

@@ -20,10 +20,26 @@ import { useUser } from "@clerk/nextjs";
 import { NotificationBell } from "./NotificationBell";
 import { NotificationModal } from "./NotificationModal";
 import { getDataRequestsForPatient } from "@/actions/dataRequest";
+import { DataRequest } from "@prisma/client";
 
 interface NavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+}
+
+interface DataRequestWithRelations extends DataRequest {
+  doctor: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+  };
+  report: {
+    id: string;
+    body: string;
+    createdAt: string | Date;
+    status: string;
+  };
 }
 
 const Prescription = (props: React.SVGProps<SVGSVGElement>) => (
@@ -48,14 +64,14 @@ export default function PatientNavigation({ activeTab, onTabChange }: Navigation
   const { user } = useUser();
 
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
-  const [dataRequests, setDataRequests] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [dataRequests, setDataRequests] = useState<DataRequestWithRelations[]>([]);
+  const [, setIsLoading] = useState(true);
   const [hasNewRequests, setHasNewRequests] = useState(false);
   const previousRequestCountRef = React.useRef(0);
 
   const pendingRequestsCount = dataRequests.filter(req => req.status === 'PENDING').length;
 
-  const fetchDataRequests = async () => {
+  const fetchDataRequests = React.useCallback(async () => {
     if (!user?.id) return;
 
     try {
@@ -74,19 +90,19 @@ export default function PatientNavigation({ activeTab, onTabChange }: Navigation
         }
 
         previousRequestCountRef.current = newPendingCount;
-        setDataRequests(newRequests);
+        setDataRequests(newRequests as DataRequestWithRelations[]);
       }
     } catch (error) {
       console.error("Failed to fetch data requests:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, previousRequestCountRef]);
 
   useEffect(() => {
     setIsLoading(true);
     fetchDataRequests();
-  }, [user?.id]);
+  }, [fetchDataRequests]);
 
   useEffect(() => {
     const pollingInterval = setInterval(() => {
@@ -94,7 +110,7 @@ export default function PatientNavigation({ activeTab, onTabChange }: Navigation
     }, 5000); // poll every 5 seconds
 
     return () => clearInterval(pollingInterval);
-  }, [user?.id]);
+  }, [fetchDataRequests]);
 
   useEffect(() => {
     if (isNotificationModalOpen) {

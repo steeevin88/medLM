@@ -3,6 +3,12 @@
 import prisma from "../lib/db";
 import { revalidatePath } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
+
+// Removing unused interfaces and just keeping as comments for future reference
+// Interfaces for Prisma types:
+// - Prisma.ReportCreateInput
+// - Prisma.ObfuscatedUserCreateInput
 
 // Doctor report actions
 export async function getReportsForDoctor(doctorId: string) {
@@ -45,8 +51,8 @@ export async function getReportById(reportId: string) {
 }
 
 export async function createReportWithObfuscatedUser(
-  report: any,
-  obfuscatedUser: any
+  report: Prisma.ReportCreateInput,
+  obfuscatedUser: Prisma.ObfuscatedUserCreateInput
 ) {
   try {
     // Create the report first
@@ -135,7 +141,7 @@ export async function sendDoctorReport({ reportBody, doctorId }: SendReportParam
     });
 
     // Create the report
-    const newReport = await prisma.report.create({
+    await prisma.report.create({
       data: {
         body: reportBody,
         status: "PENDING",

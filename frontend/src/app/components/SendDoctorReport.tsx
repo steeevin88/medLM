@@ -6,17 +6,39 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from "@/components/ui/textarea";
 import { getDoctors } from "@/actions/doctor";
 import { sendDoctorReport } from "@/actions/report";
+import { toast } from "sonner";
 
 type Step = "compose" | "select-doctor";
+
+interface Doctor {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  specialization?: string | null;
+  hospital?: string | null;
+  email?: string | null;
+}
 
 export default function SendDoctorReport() {
   const [reportBody, setReportBody] = useState("");
   const [currentStep, setCurrentStep] = useState<Step>("compose");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+
+  // Check for a draft report in localStorage when component mounts
+  useEffect(() => {
+    if (!draftLoaded && typeof window !== 'undefined') {
+      const draftReport = localStorage.getItem('medlm_report_draft');
+      if (draftReport) {
+        setReportBody(draftReport);
+        localStorage.removeItem('medlm_report_draft'); // Remove after loading
+      }
+      setDraftLoaded(true);
+    }
+  }, [draftLoaded]);
 
   const handleContinue = () => {
     if (!reportBody.trim()) {
-      alert("Please enter a report before continuing");
+      toast.error("Please enter a report before continuing");
       return;
     }
 
@@ -28,7 +50,9 @@ export default function SendDoctorReport() {
       <CardHeader>
         <CardTitle>Send Doctor Report</CardTitle>
         <CardDescription>
-          Compose a detailed report to send to your doctor. You can use Markdown formatting.
+          {draftLoaded && reportBody ?
+            "I've prepared a report based on our conversation. You can edit it before sending to a doctor." :
+            "Compose a detailed report to send to your doctor. You can use Markdown formatting."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -56,8 +80,6 @@ export default function SendDoctorReport() {
   );
 
   const handleDoctorSelect = async (doctorId: string) => {
-    setIsSubmitting(true);
-
     try {
       const result = await sendDoctorReport({
         reportBody,
@@ -68,14 +90,12 @@ export default function SendDoctorReport() {
         throw new Error(result.error || "Failed to send report");
       }
 
-      alert("Report sent successfully!");
+      toast.success("Report sent successfully!");
       setReportBody("");
       setCurrentStep("compose");
     } catch (error) {
       console.error("Error sending report:", error);
-      alert("There was an error sending your report. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+      toast.error("There was an error sending your report. Please try again.");
     }
   };
 
@@ -107,7 +127,7 @@ export default function SendDoctorReport() {
 
 function DoctorList({ onSelect }: { onSelect: (doctorId: string) => void }) {
   const [loading, setLoading] = useState(true);
-  const [doctors, setDoctors] = useState<any[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -118,7 +138,7 @@ function DoctorList({ onSelect }: { onSelect: (doctorId: string) => void }) {
         if (result.error) {
           setError(result.error);
         } else {
-          setDoctors(result.doctors);
+          setDoctors(result.doctors as Doctor[]);
         }
       } catch (err) {
         console.error("Error loading doctors:", err);
